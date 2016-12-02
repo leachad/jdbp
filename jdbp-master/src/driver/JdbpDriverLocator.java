@@ -4,6 +4,7 @@
 package driver;
 
 import java.sql.Driver;
+import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.ServiceLoader;
 import java.util.Set;
@@ -24,33 +25,36 @@ public class JdbpDriverLocator {
 	private static final String PASSWORD = "password";
 	private static Driver driver = null;
 
-	static {
-		ResourceBundle jdbpProps = ResourceBundle.getBundle("jdbp.properties");
+	private JdbpDriverLocator() {
+		// private constructor to hide the default public constructor
+	}
+
+	/**
+	 * Find the appropriate jdbc driver based on property files and availability in the classpath
+	 */
+	public static void findJdbcDriver() {
+		ResourceBundle jdbpProps = ResourceBundle.getBundle("resources.jdbp", Locale.getDefault());
 		Set<String> keySet = jdbpProps.keySet();
 		for(String key: keySet) {
 			if(key.equals(REQUESTED_DRIVER_NAME)) {
-				driver = JdbpDriverLocator.locateDriver(key);
+				driver = JdbpDriverLocator.locateDriver(jdbpProps.getString(key));
 			}
 			else if(key.equals(URL)) {
-				JdbpDriverManager.setUrl(key);
+				JdbpDriverManager.setUrl(jdbpProps.getString(key));
 			}
 			else if(key.equals(URL_PARAMS)) {
-				JdbpDriverManager.setUrlParams(key);
+				JdbpDriverManager.setUrlParams(jdbpProps.getString(key));
 			}
 			else if(key.equals(USERNAME)) {
-				JdbpDriverManager.setUserName(key);
+				JdbpDriverManager.setUserName(jdbpProps.getString(key));
 			}
 			else if(key.equals(PASSWORD)) {
-				JdbpDriverManager.setPassword(key);
+				JdbpDriverManager.setPassword(jdbpProps.getString(key));
 			}
 		}
 		if(driver == null) {
 			driver = locateDriver();
 		}
-	}
-
-	private JdbpDriverLocator() {
-		// private constructor to hide the default public constructor
 	}
 
 	/**

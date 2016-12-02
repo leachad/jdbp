@@ -20,11 +20,18 @@ public class Jdbp {
 	}
 
 	/**
-	 * @param url
+	 * @throws JdbpDriverException
+	 */
+	public static void initialize() throws JdbpDriverException {
+		JdbpDriverLocator.findJdbcDriver();
+	}
+
+	/**
+	 * @param schemaName
 	 * @return
 	 * @throws JdbpDriverException
 	 */
-	public static Connection getConnection(String url) throws JdbpDriverException {
-		return JdbpDriverManager.getConnection(url);
+	public static Connection getConnection(String schemaName) throws JdbpDriverException {
+		return JdbpDriverManager.getConnection(schemaName);
 	}
 }

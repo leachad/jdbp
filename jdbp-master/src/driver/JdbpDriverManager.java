@@ -12,6 +12,10 @@ import java.util.Properties;
 
 import exception.JdbpDriverException;
 
+/**
+ * @since 12.2.2016
+ * @author andrew.leach
+ */
 public class JdbpDriverManager {
 
 	private static Driver driver;
@@ -20,6 +24,10 @@ public class JdbpDriverManager {
 	private static String username;
 	private static String password;
 	private static Properties info;
+
+	private JdbpDriverManager() {
+		// private do nothing constructor to hide the implicit constructor
+	}
 
 	/**
 	 * @param driver
@@ -43,28 +51,12 @@ public class JdbpDriverManager {
 	}
 
 	/**
-	 * @param url
+	 * @param schemaName
 	 * @return a connection
 	 * @throws JdbpDriverException
 	 */
-	public static Connection getConnection(String url) throws JdbpDriverException {
-		Connection connection = null;
-		try {
-			connection = DriverManager.getConnection(url);
-		}
-		catch(SQLException e) {
-			JdbpDriverException.throwException(e);
-		}
-		return connection;
-	}
-
-	/**
-	 * No-argument version of the method that uses static fields to return a connection if they exist
-	 * 
-	 * @return a connection
-	 */
-	public static Connection getConnection() throws JdbpDriverException {
-		return getValidConnection();
+	public static Connection getConnection(String schemaName) throws JdbpDriverException {
+		return getValidConnection(schemaName);
 	}
 
 	/**
@@ -102,10 +94,13 @@ public class JdbpDriverManager {
 		return connection;
 	}
 
-	private static Connection getValidConnection() throws JdbpDriverException {
+	private static Connection getValidConnection(String schemaName) throws JdbpDriverException {
 		Connection connection = null;
 		if(url == null) {
 			JdbpDriverException.throwException("database url cannot be null");
+		}
+		if(schemaName != null) {
+			url = appendSchemaName(schemaName);
 		}
 		if(urlParamArgPairs != null) {
 			url = appendUrlArgs();
@@ -128,12 +123,19 @@ public class JdbpDriverManager {
 		int argIndex = 0;
 		for(Entry<String, String> paramArgPair: urlParamArgPairs.entrySet()) {
 			sb.append(paramArgPair.getKey() + "=" + paramArgPair.getValue());
-			if(argIndex > 0 || argIndex < urlParamArgPairs.size()) {
+			if(argIndex > 0 && argIndex < urlParamArgPairs.size()) {
 				sb.append("&");
 			}
 			argIndex++;
 		}
 		return sb.toString();
+	}
+
+	private static String appendSchemaName(String schemaName) {
+		if(url.charAt(url.length() - 1) != 0x2F) {
+			url = url + 0x2F;
+		}
+		return url + schemaName;
 	}
 
 	private static boolean userCredentialsProvided() {
