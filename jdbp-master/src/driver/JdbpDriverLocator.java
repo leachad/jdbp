@@ -41,13 +41,16 @@ public class JdbpDriverLocator {
 				JdbpDriverManager.setUserName(key);
 			}
 			else if(key.equals(PASSWORD)) {
-				JdbpDriverManager.setPassword(password);
+				JdbpDriverManager.setPassword(key);
 			}
 		}
 		if(driver == null) {
 			driver = locateDriver();
 		}
+	}
 
+	private JdbpDriverLocator() {
+		// private constructor to hide the default public constructor
 	}
 
 	/**

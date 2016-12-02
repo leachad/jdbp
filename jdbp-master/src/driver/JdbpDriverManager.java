@@ -7,6 +7,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 
 import exception.JdbpDriverException;
@@ -18,6 +19,7 @@ public class JdbpDriverManager {
 	private static Map<String, String> urlParamArgPairs;
 	private static String username;
 	private static String password;
+	private static Properties info;
 
 	/**
 	 * @param driver
@@ -100,12 +102,46 @@ public class JdbpDriverManager {
 		return connection;
 	}
 
-	private static Connection getValidConnection() {
+	private static Connection getValidConnection() throws JdbpDriverException {
 		Connection connection = null;
-		if(url != null) {
-			// TODO capture all the cases here where connections can be obtained using static parameters available
+		if(url == null) {
+			JdbpDriverException.throwException("database url cannot be null");
 		}
+		if(urlParamArgPairs != null) {
+			url = appendUrlArgs();
+		}
+		if(userCredentialsProvided() && !propertiesInfoProvided()) {
+			connection = JdbpDriverManager.getConnection(url, username, password);
+		}
+		else if(!userCredentialsProvided() && propertiesInfoProvided()) {
+			connection = JdbpDriverManager.getConnection(url, info);
+		}
+		else if(!userCredentialsProvided() && !propertiesInfoProvided()) {
+			connection = JdbpDriverManager.getConnection(url);
+		}
+
 		return connection;
+	}
+
+	private static String appendUrlArgs() {
+		StringBuilder sb = new StringBuilder(url + "?");
+		int argIndex = 0;
+		for(Entry<String, String> paramArgPair: urlParamArgPairs.entrySet()) {
+			sb.append(paramArgPair.getKey() + "=" + paramArgPair.getValue());
+			if(argIndex > 0 || argIndex < urlParamArgPairs.size()) {
+				sb.append("&");
+			}
+			argIndex++;
+		}
+		return sb.toString();
+	}
+
+	private static boolean userCredentialsProvided() {
+		return username != null && password != null;
+	}
+
+	private static boolean propertiesInfoProvided() {
+		return info != null;
 	}
 
 	/**
