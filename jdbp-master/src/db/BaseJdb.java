@@ -6,7 +6,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-import driver.Jdbp;
 import exception.JdbpDriverException;
 
 public class BaseJdb extends JdbManager {
@@ -21,7 +20,7 @@ public class BaseJdb extends JdbManager {
 	public static PreparedStatement getCallableStatement(String dataSourceName, String statementName) throws SQLException, JdbpDriverException {
 		Statement ps = null;
 		if(dataSourceName != null) {
-			Connection connection = Jdbp.getConnection(dataSourceName);
+			Connection connection = getAvailableConnection(dataSourceName);
 			ps = connection.prepareCall(statementName);
 		}
 		return (PreparedStatement)ps;
