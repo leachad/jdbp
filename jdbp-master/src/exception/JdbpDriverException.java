@@ -40,4 +40,13 @@ public class JdbpDriverException extends Exception {
 		throw new JdbpDriverException(e);
 	}
 
+	/**
+	 * @param message
+	 * @throws JdbpDriverException
+	 */
+	public static void throwException(String message) throws JdbpDriverException {
+		throw new JdbpDriverException(message);
+
+	}
+
 }
