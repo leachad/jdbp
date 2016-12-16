@@ -6,13 +6,13 @@ package exception;
  * @since 12.1.2016
  * @author andrew.leach
  */
-public class JdbpDriverException extends Exception {
+public class JdbpException extends Exception {
 	private static final long serialVersionUID = 1320542324622606780L;
 
 	/**
 	 * No-argument constructor
 	 */
-	public JdbpDriverException() {
+	public JdbpException() {
 		super();
 	}
 
@@ -20,7 +20,7 @@ public class JdbpDriverException extends Exception {
 	 * @param message
 	 *        to be recorded
 	 */
-	public JdbpDriverException(String message) {
+	public JdbpException(String message) {
 		super(message);
 	}
 
@@ -28,24 +28,24 @@ public class JdbpDriverException extends Exception {
 	 * @param throwable
 	 *        to be recorded
 	 */
-	public JdbpDriverException(Throwable throwable) {
+	public JdbpException(Throwable throwable) {
 		super(throwable);
 	}
 
 	/**
 	 * @param e
-	 * @throws JdbpDriverException
+	 * @throws JdbpException
 	 */
-	public static void throwException(Exception e) throws JdbpDriverException {
-		throw new JdbpDriverException(e);
+	public static void throwException(Exception e) throws JdbpException {
+		throw new JdbpException(e);
 	}
 
 	/**
 	 * @param message
-	 * @throws JdbpDriverException
+	 * @throws JdbpException
 	 */
-	public static void throwException(String message) throws JdbpDriverException {
-		throw new JdbpDriverException(message);
+	public static void throwException(String message) throws JdbpException {
+		throw new JdbpException(message);
 
 	}
 

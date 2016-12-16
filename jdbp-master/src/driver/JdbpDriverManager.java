@@ -10,9 +10,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-import exception.JdbpDriverException;
+import db.JdbpConnectionManager;
+import exception.JdbpException;
 
 /**
+ * JdbpDriverManager initializes all key-value pairs outlined by implementing code in jdbp.properties. Authenticated access will only be accessible if
+ * the client code defines the credentials in jdbp.properties. Additionally, any properties the implementing code requires must be identified in
+ * jdbp.properties.
+ * 
  * @since 12.2.2016
  * @author andrew.leach
  */
@@ -24,6 +29,7 @@ public class JdbpDriverManager {
 	private static String username;
 	private static String password;
 	private static Properties info;
+	private static Map<String, String> constructedUrlsForSchema = new HashMap<>();
 
 	private JdbpDriverManager() {
 		// private do nothing constructor to hide the implicit constructor
@@ -32,72 +38,37 @@ public class JdbpDriverManager {
 	/**
 	 * @param driver
 	 * @param driverAction
-	 * @throws JdbpDriverException
+	 * @throws JdbpException
 	 */
-	public static void registerDriver(DriverAction driverAction) throws JdbpDriverException {
+	public static void registerDriver(DriverAction driverAction) throws JdbpException {
 		try {
 			DriverManager.registerDriver(driver, driverAction);
 		}
 		catch(SQLException e) {
-			JdbpDriverException.throwException(e);
+			JdbpException.throwException(e);
 		}
 	}
 
 	/**
-	 * @throws JdbpDriverException
+	 * @throws JdbpException
 	 */
-	public static void registerDriver() throws JdbpDriverException {
+	public static void registerDriver() throws JdbpException {
 		JdbpDriverManager.registerDriver(null);
 	}
 
 	/**
 	 * @param schemaName
 	 * @return a connection
-	 * @throws JdbpDriverException
+	 * @throws JdbpException
 	 */
-	public static Connection getConnection(String schemaName) throws JdbpDriverException {
+	public static Connection getConnection(String schemaName) throws JdbpException {
 		return getValidConnection(schemaName);
 	}
 
-	/**
-	 * @param url
-	 * @param user
-	 * @param password
-	 * @return a connection
-	 * @throws JdbpDriverException
-	 */
-	public static Connection getConnection(String url, String user, String password) throws JdbpDriverException {
-		Connection connection = null;
-		try {
-			connection = DriverManager.getConnection(url, user, password);
-		}
-		catch(SQLException e) {
-			JdbpDriverException.throwException(e);
-		}
-		return connection;
-	}
-
-	/**
-	 * @param url
-	 * @param info
-	 * @return a connection
-	 * @throws JdbpDriverException
-	 */
-	public static Connection getConnection(String url, Properties info) throws JdbpDriverException {
-		Connection connection = null;
-		try {
-			connection = DriverManager.getConnection(url, info);
-		}
-		catch(SQLException e) {
-			JdbpDriverException.throwException(e);
-		}
-		return connection;
-	}
-
-	private static Connection getValidConnection(String schemaName) throws JdbpDriverException {
+	private static Connection getValidConnection(String schemaName) throws JdbpException {
 		Connection connection = null;
 		if(url == null) {
-			JdbpDriverException.throwException("database url cannot be null");
+			JdbpException.throwException("database url cannot be null");
 		}
 		if(schemaName != null) {
 			url = appendSchemaName(schemaName);
@@ -105,14 +76,16 @@ public class JdbpDriverManager {
 		if(urlParamArgPairs != null) {
 			url = appendUrlArgs();
 		}
+		updateConstructedUrlForSchema(schemaName);
+
 		if(userCredentialsProvided() && !propertiesInfoProvided()) {
-			connection = JdbpDriverManager.getConnection(url, username, password);
+			connection = JdbpConnectionManager.getConnection(schemaName, username, password);
 		}
 		else if(!userCredentialsProvided() && propertiesInfoProvided()) {
-			connection = JdbpDriverManager.getConnection(url, info);
+			connection = JdbpConnectionManager.getConnection(schemaName, info);
 		}
 		else if(!userCredentialsProvided() && !propertiesInfoProvided()) {
-			connection = JdbpDriverManager.getConnection(url);
+			connection = JdbpConnectionManager.getConnection(schemaName);
 		}
 
 		return connection;
@@ -120,10 +93,10 @@ public class JdbpDriverManager {
 
 	private static String appendUrlArgs() {
 		StringBuilder sb = new StringBuilder(url + "?");
-		int argIndex = 0;
+		int argIndex = 1;
 		for(Entry<String, String> paramArgPair: urlParamArgPairs.entrySet()) {
 			sb.append(paramArgPair.getKey() + "=" + paramArgPair.getValue());
-			if(argIndex > 0 && argIndex < urlParamArgPairs.size()) {
+			if(argIndex >= 1 && argIndex < urlParamArgPairs.size() && argIndex != urlParamArgPairs.size()) {
 				sb.append("&");
 			}
 			argIndex++;
@@ -147,6 +120,17 @@ public class JdbpDriverManager {
 	}
 
 	/**
+	 * Currently only a one to one mapping for schema names and constructed urls
+	 * 
+	 * @param schemaName
+	 */
+	private static void updateConstructedUrlForSchema(String schemaName) {
+		if(url != null) {
+			constructedUrlsForSchema.put(schemaName, url);
+		}
+	}
+
+	/**
 	 * @param driver
 	 */
 	public static void setDriver(Driver driver) {
@@ -158,6 +142,14 @@ public class JdbpDriverManager {
 	 */
 	public static void setUrl(String url) {
 		JdbpDriverManager.url = url;
+	}
+
+	/**
+	 * @param schemaName
+	 * @return constructed url for schema name, else, available url field in JdbpDriverManager
+	 */
+	public static String getUrlForSchemaName(String schemaName) {
+		return constructedUrlsForSchema.get(schemaName) != null ? constructedUrlsForSchema.get(schemaName) : url;
 	}
 
 	/**
