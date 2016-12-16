@@ -5,7 +5,8 @@ package driver;
 
 import java.sql.Connection;
 
-import exception.JdbpDriverException;
+import db.IndexedPoolableConnection;
+import exception.JdbpException;
 
 /**
  * Main Class for the Jdbp [ <b>J</b>ava <b>D</b>ata<b>b</b>ase <b>P</b>arser ] project
@@ -20,18 +21,23 @@ public class Jdbp {
 	}
 
 	/**
-	 * @throws JdbpDriverException
+	 * @throws JdbpException
 	 */
-	public static void initialize() throws JdbpDriverException {
+	public static void initialize() throws JdbpException {
 		JdbpDriverLocator.findJdbcDriver();
 	}
 
 	/**
 	 * @param schemaName
 	 * @return
-	 * @throws JdbpDriverException
+	 * @throws JdbpException
 	 */
-	public static Connection getConnection(String schemaName) throws JdbpDriverException {
+	public static Connection getConnection(String schemaName) throws JdbpException {
 		return JdbpDriverManager.getConnection(schemaName);
+	}
+
+	public static IndexedPoolableConnection getConnection(String schemaName, int index) throws JdbpException {
+		Connection connection = JdbpDriverManager.getConnection(schemaName);
+		return new IndexedPoolableConnection(connection, schemaName, index);
 	}
 }
