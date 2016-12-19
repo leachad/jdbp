@@ -1,11 +1,10 @@
 /**
  * 
  */
-package driver;
+package db;
 
 import java.sql.Connection;
 
-import db.IndexedPoolableConnection;
 import exception.JdbpException;
 
 /**
@@ -36,8 +35,13 @@ public class Jdbp {
 		return JdbpDriverManager.getConnection(schemaName);
 	}
 
-	public static IndexedPoolableConnection getConnection(String schemaName, int index) throws JdbpException {
-		Connection connection = JdbpDriverManager.getConnection(schemaName);
-		return new IndexedPoolableConnection(connection, schemaName, index);
+	/**
+	 * @param connection
+	 * @param schemaName
+	 * @throws JdbpException
+	 */
+	public static void releaseConnection(Connection connection, String schemaName) throws JdbpException {
+		JdbpDriverManager.releaseConnection(connection, schemaName);
+
 	}
 }

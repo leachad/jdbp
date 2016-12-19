@@ -12,7 +12,7 @@ import exception.JdbpException;
  * @since 12.1.16
  * @author andrew.leach
  */
-public class BaseJdb extends JdbpConnectionManager {
+public abstract class AbstractDB extends JdbpConnectionManager {
 
 	/**
 	 * @param dataSourceName

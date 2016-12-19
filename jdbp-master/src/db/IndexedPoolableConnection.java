@@ -10,19 +10,20 @@ import java.sql.SQLException;
 public class IndexedPoolableConnection {
 	private Connection connection;
 	private String schemaName;
-	private int connectionIndex;
+	private int connectionId;
 	private boolean available;
+	private int timesRecycled = -1;
 
 	/**
 	 * @param connection
 	 * @param schemaName
-	 * @param connectionIndex
+	 * @param connectionId
 	 */
-	public IndexedPoolableConnection(Connection connection, String schemaName, int connectionIndex) {
+	public IndexedPoolableConnection(Connection connection, String schemaName) {
 		this.connection = connection;
 		this.schemaName = schemaName;
-		this.connectionIndex = connectionIndex;
-		this.available = false;
+		this.connectionId = connection.hashCode();
+		acquireLock();
 	}
 
 	public Connection getConnection() {
@@ -33,17 +34,8 @@ public class IndexedPoolableConnection {
 		return schemaName;
 	}
 
-	public int getConnectionIndex() {
-		return connectionIndex;
-	}
-
-	/**
-	 * Invokes the close method on java.sql.Connection
-	 * 
-	 * @throws SQLException
-	 */
-	public void close() throws SQLException {
-		connection.close();
+	public int getConnectionId() {
+		return connectionId;
 	}
 
 	public boolean isClosed() throws SQLException {
@@ -52,6 +44,10 @@ public class IndexedPoolableConnection {
 
 	public boolean isAvailable() {
 		return available;
+	}
+
+	public int getTimesRecycled() {
+		return timesRecycled;
 	}
 
 	/**
@@ -66,6 +62,7 @@ public class IndexedPoolableConnection {
 	 */
 	public void acquireLock() {
 		this.available = false;
+		timesRecycled++;
 	}
 
 }
