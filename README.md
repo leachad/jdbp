@@ -1,21 +1,22 @@
 #jdbp
 
-**_Currently Tested_**
+**_[NOTE] Currently Tested JDBC Drivers_**
+
 1. mysql
 
 ### Build
 There is no build required to use jdbp. Simply edit the jdbp.properties file based on the driver your project requires. Jdbp has 5 propertysets.
 
 1. **_Driver Name [Required]_** 
-..*Example: requestedDriverName=mysql
+  * Example: requestedDriverName=mysql
 2. **_Url [Required]_**
-..*Example: url=jdbc:mysql://localhost:3306/
+  * Example: url=jdbc:mysql://localhost:3306/
 3. **_Url Params_**
-..*Example: urlParams=useSsl=true,anotherKey=anotherVal,otherKey=otherVal
+  * Example: urlParams=useSsl=true,anotherKey=anotherVal,otherKey=otherVal
 4. **_Username_**
-..*Example: username=root
+  * Example: username=root
 5. **_Password_**
-..*Example: password=poorlyObfuscatedPassword
+  * Example: password=poorlyObfuscatedPassword
 
 ### Getting Started
 In your project, the only line required to start the dynamic lookup is:
