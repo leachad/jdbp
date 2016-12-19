@@ -1,4 +1,4 @@
-package driver;
+package db;
 
 import java.sql.Connection;
 import java.sql.Driver;
@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-import db.JdbpConnectionManager;
 import exception.JdbpException;
 
 /**
@@ -63,6 +62,15 @@ public class JdbpDriverManager {
 	 */
 	public static Connection getConnection(String schemaName) throws JdbpException {
 		return getValidConnection(schemaName);
+	}
+
+	/**
+	 * @param connection
+	 * @param schemaName
+	 * @throws JdbpException
+	 */
+	public static void releaseConnection(Connection connection, String schemaName) throws JdbpException {
+		JdbpConnectionManager.releaseConnection(connection, schemaName);
 	}
 
 	private static Connection getValidConnection(String schemaName) throws JdbpException {
@@ -177,5 +185,4 @@ public class JdbpDriverManager {
 	public static void setPassword(String password) {
 		JdbpDriverManager.password = password;
 	}
-
 }

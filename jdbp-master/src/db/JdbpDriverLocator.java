@@ -1,7 +1,7 @@
 /**
  * 
  */
-package driver;
+package db;
 
 import java.sql.Driver;
 import java.util.Locale;
