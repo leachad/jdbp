@@ -3,8 +3,6 @@
  */
 package db;
 
-import java.sql.Connection;
-
 import exception.JdbpException;
 
 /**
@@ -24,6 +22,7 @@ public class Jdbp {
 	 */
 	public static void initialize() throws JdbpException {
 		JdbpDriverLocator.findJdbcDriver();
+		JdbpDriverUtil.readDriverUtilProperties();
 	}
 
 	/**
@@ -31,17 +30,7 @@ public class Jdbp {
 	 * @return
 	 * @throws JdbpException
 	 */
-	public static Connection getConnection(String schemaName) throws JdbpException {
-		return JdbpDriverManager.getConnection(schemaName);
-	}
-
-	/**
-	 * @param connection
-	 * @param schemaName
-	 * @throws JdbpException
-	 */
-	public static void releaseConnection(Connection connection, String schemaName) throws JdbpException {
-		JdbpDriverManager.releaseConnection(connection, schemaName);
-
+	public static SchemaContainer getDatabase(String schemaName) throws JdbpException {
+		return JdbpSchemaManager.fetchDB(schemaName);
 	}
 }

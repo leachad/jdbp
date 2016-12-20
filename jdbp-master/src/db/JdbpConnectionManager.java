@@ -6,7 +6,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 import exception.JdbpException;
 
@@ -28,130 +27,43 @@ public class JdbpConnectionManager {
 	}
 
 	/**
-	 * @param schemaName
-	 * @param userName
-	 * @param password
-	 * @return
+	 * @param schemaContainer
+	 * @return an implementation of javax.sql.Connection
 	 * @throws JdbpException
 	 */
-	protected static Connection getConnection(String schemaName, String userName, String password) throws JdbpException {
-		return getAvailableConnection(schemaName, userName, password);
+	protected static IndexedPoolableConnection getConnection(SchemaContainer schemaContainer) throws JdbpException {
+		return getAvailableConnection(schemaContainer);
 	}
 
 	/**
 	 * @param schemaName
-	 * @param propertyInfo
-	 * @return
+	 * @return an implementation of javax.sql.Connection
 	 * @throws JdbpException
 	 */
-	protected static Connection getConnection(String schemaName, Properties propertyInfo) throws JdbpException {
-		return getAvailableConnection(schemaName, propertyInfo);
+	protected static IndexedPoolableConnection getConnection(String schemaName) throws JdbpException {
+		return getAvailableConnection(JdbpSchemaManager.fetchDB(schemaName));
 	}
 
-	/**
-	 * @param schemaName
-	 * @return
-	 * @throws JdbpException
-	 */
-	protected static Connection getConnection(String schemaName) throws JdbpException {
-		return getAvailableConnection(schemaName);
-	}
-
-	/**
-	 * @param schemaName
-	 * @param userName
-	 * @param password
-	 * @return
-	 * @throws JdbpException
-	 */
-	private static Connection getAvailableConnection(String schemaName, String userName, String password) throws JdbpException {
-		Connection leasedConnection = null;
+	private static IndexedPoolableConnection getAvailableConnection(SchemaContainer schemaContainer) throws JdbpException {
+		IndexedPoolableConnection leasedConnection = null;
 		synchronized(lockingConnectionManager) {
+			String schemaName = schemaContainer.getSchemaName();
 			Map<Integer, IndexedPoolableConnection> connectionPoolMap = jdbpConnectionPool.get(schemaName);
 			if(connectionPoolMap == null) {
 				connectionPoolMap = new HashMap<>();
-				IndexedPoolableConnection newConnectionForSchema = getNewConnection(schemaName, userName, password);
+				IndexedPoolableConnection newConnectionForSchema = getNewConnection(schemaContainer);
 				connectionPoolMap.put(newConnectionForSchema.getConnectionId(), newConnectionForSchema);
 				jdbpConnectionPool.put(schemaName, connectionPoolMap);
-				leasedConnection = newConnectionForSchema.getConnection();
+				leasedConnection = newConnectionForSchema;
 
 			}
 			else {
 				try {
 					leasedConnection = acquireNextAvailableConnection(schemaName);
 					if(leasedConnection == null) {
-						IndexedPoolableConnection connection = getNewConnection(schemaName, userName, password);
+						IndexedPoolableConnection connection = getNewConnection(schemaContainer);
 						connectionPoolMap.put(connection.getConnectionId(), connection);
-						leasedConnection = connection.getConnection();
-					}
-				}
-				catch(SQLException e) {
-					JdbpException.throwException(e);
-				}
-			}
-		}
-		return leasedConnection;
-	}
-
-	/**
-	 * @param schemaName
-	 * @param propertyInfo
-	 * @return
-	 * @throws JdbpException
-	 */
-	private static Connection getAvailableConnection(String schemaName, Properties propertyInfo) throws JdbpException {
-		Connection leasedConnection = null;
-		synchronized(lockingConnectionManager) {
-			Map<Integer, IndexedPoolableConnection> connectionPoolMap = jdbpConnectionPool.get(schemaName);
-			if(connectionPoolMap == null) {
-				connectionPoolMap = new HashMap<>();
-				IndexedPoolableConnection newConnectionForSchema = getNewConnection(schemaName, propertyInfo);
-				connectionPoolMap.put(newConnectionForSchema.getConnectionId(), newConnectionForSchema);
-				jdbpConnectionPool.put(schemaName, connectionPoolMap);
-				leasedConnection = newConnectionForSchema.getConnection();
-
-			}
-			else {
-				try {
-					leasedConnection = acquireNextAvailableConnection(schemaName);
-					if(leasedConnection == null) {
-						IndexedPoolableConnection connection = getNewConnection(schemaName, propertyInfo);
-						connectionPoolMap.put(connection.getConnectionId(), connection);
-						leasedConnection = connection.getConnection();
-					}
-				}
-				catch(SQLException e) {
-					JdbpException.throwException(e);
-				}
-			}
-		}
-		return leasedConnection;
-	}
-
-	/**
-	 * @param schemaName
-	 * @return
-	 * @throws JdbpException
-	 */
-	private static Connection getAvailableConnection(String schemaName) throws JdbpException {
-		Connection leasedConnection = null;
-		synchronized(lockingConnectionManager) {
-			Map<Integer, IndexedPoolableConnection> connectionPoolMap = jdbpConnectionPool.get(schemaName);
-			if(connectionPoolMap == null) {
-				connectionPoolMap = new HashMap<>();
-				IndexedPoolableConnection newConnectionForSchema = getNewConnection(schemaName);
-				connectionPoolMap.put(newConnectionForSchema.getConnectionId(), newConnectionForSchema);
-				jdbpConnectionPool.put(schemaName, connectionPoolMap);
-				leasedConnection = newConnectionForSchema.getConnection();
-
-			}
-			else {
-				try {
-					leasedConnection = acquireNextAvailableConnection(schemaName);
-					if(leasedConnection == null) {
-						IndexedPoolableConnection connection = getNewConnection(schemaName);
-						connectionPoolMap.put(connection.getConnectionId(), connection);
-						leasedConnection = connection.getConnection();
+						leasedConnection = connection;
 					}
 				}
 				catch(SQLException e) {
@@ -209,50 +121,35 @@ public class JdbpConnectionManager {
 		}
 	}
 
-	private static IndexedPoolableConnection getNewConnection(String schemaName, String userName, String password) throws JdbpException {
+	private static IndexedPoolableConnection getNewConnection(SchemaContainer schemaContainer) throws JdbpException {
 		Connection connection = null;
 		try {
-			String url = JdbpDriverManager.getUrlForSchemaName(schemaName);
-			connection = DriverManager.getConnection(url, userName, password);
+			String targetUrl = schemaContainer.getTargetUrl();
+			if(schemaContainer.hasCredentialsNoProperties()) {
+				connection = DriverManager.getConnection(targetUrl, schemaContainer.getUserName(), schemaContainer.getPassword());
+			}
+			else if(schemaContainer.hasPropertiesNoCredentials()) {
+				connection = DriverManager.getConnection(targetUrl, schemaContainer.getPropertiesInfo());
+			}
+			else if(schemaContainer.hasNoPropertiesNoCredentials()) {
+				connection = DriverManager.getConnection(targetUrl);
+			}
+
 		}
 		catch(SQLException e) {
 			JdbpException.throwException(e);
 		}
-		return new IndexedPoolableConnection(connection, schemaName);
+		return new IndexedPoolableConnection(connection, schemaContainer.getSchemaName());
 	}
 
-	private static IndexedPoolableConnection getNewConnection(String schemaName, Properties propertyInfo) throws JdbpException {
-		Connection connection = null;
-		try {
-			String url = JdbpDriverManager.getUrlForSchemaName(schemaName);
-			connection = DriverManager.getConnection(url, propertyInfo);
-		}
-		catch(SQLException e) {
-			JdbpException.throwException(e);
-		}
-		return new IndexedPoolableConnection(connection, schemaName);
-	}
-
-	private static IndexedPoolableConnection getNewConnection(String schemaName) throws JdbpException {
-		Connection connection = null;
-		try {
-			String url = JdbpDriverManager.getUrlForSchemaName(schemaName);
-			connection = DriverManager.getConnection(url);
-		}
-		catch(SQLException e) {
-			JdbpException.throwException(e);
-		}
-		return new IndexedPoolableConnection(connection, schemaName);
-	}
-
-	private static Connection acquireNextAvailableConnection(String schemaName) throws SQLException {
-		Connection leasedConnection = null;
+	private static IndexedPoolableConnection acquireNextAvailableConnection(String schemaName) throws SQLException {
+		IndexedPoolableConnection leasedConnection = null;
 		Map<Integer, IndexedPoolableConnection> connectionPoolMap = jdbpConnectionPool.get(schemaName);
 		for(Map.Entry<Integer, IndexedPoolableConnection> connectionPoolEntry: connectionPoolMap.entrySet()) {
 			IndexedPoolableConnection validConnection = connectionPoolEntry.getValue();
 			if(!validConnection.isClosed() && validConnection.isAvailable()) {
 				validConnection.acquireLock();
-				leasedConnection = validConnection.getConnection();
+				leasedConnection = validConnection;
 				break;
 			}
 		}

@@ -1,6 +1,5 @@
 package db;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,9 +25,9 @@ public abstract class AbstractDB extends JdbpConnectionManager {
 	public static PreparedStatement getCallableStatement(String dataSourceName, String statementName) throws JdbpException {
 		Statement ps = null;
 		if(dataSourceName != null) {
-			Connection connection = getConnection(dataSourceName);
+			IndexedPoolableConnection indexedConnection = getConnection(dataSourceName);
 			try {
-				ps = connection.prepareCall(statementName);
+				ps = indexedConnection.getConnection().prepareCall(statementName);
 			}
 			catch(SQLException e) {
 				JdbpException.throwException(e);

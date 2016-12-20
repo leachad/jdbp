@@ -6,6 +6,7 @@ import java.sql.DriverAction;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
@@ -23,12 +24,12 @@ import exception.JdbpException;
 public class JdbpDriverManager {
 
 	private static Driver driver;
-	private static String url;
 	private static Map<String, String> urlParamArgPairs;
 	private static String username;
 	private static String password;
 	private static Properties info;
-	private static Map<String, String> constructedUrlsForSchema = new HashMap<>();
+	private static boolean loadBalanced;
+	private static String requestedDriverName;
 
 	private JdbpDriverManager() {
 		// private do nothing constructor to hide the implicit constructor
@@ -57,10 +58,10 @@ public class JdbpDriverManager {
 
 	/**
 	 * @param schemaName
-	 * @return a connection
+	 * @return an IndexedPoolableConnection instance
 	 * @throws JdbpException
 	 */
-	public static Connection getConnection(String schemaName) throws JdbpException {
+	public static IndexedPoolableConnection getConnection(String schemaName) throws JdbpException {
 		return getValidConnection(schemaName);
 	}
 
@@ -73,50 +74,93 @@ public class JdbpDriverManager {
 		JdbpConnectionManager.releaseConnection(connection, schemaName);
 	}
 
-	private static Connection getValidConnection(String schemaName) throws JdbpException {
-		Connection connection = null;
-		if(url == null) {
-			JdbpException.throwException("database url cannot be null");
+	/**
+	 * @param schemaName
+	 * @return a fully built schemaContainer
+	 */
+	public static SchemaContainer buildSchemaContainerFromProperties(String schemaName) throws JdbpException {
+		if(JdbpHostManager.getHostNames() == null) {
+			JdbpException.throwException("database hostName cannot be null");
 		}
-		if(schemaName != null) {
-			url = appendSchemaName(schemaName);
+		SchemaContainer schemaContainer = null;
+		if(schemaName == null) {
+			JdbpException.throwException(new IllegalArgumentException("schemaName must not be null"));
 		}
-		if(urlParamArgPairs != null) {
-			url = appendUrlArgs();
+		else {
+			schemaContainer = new SchemaContainer(schemaName);
+			StringBuilder targetUrlBuilder = new StringBuilder();
+			appendDriverClassAndUrlScheme(targetUrlBuilder);
+			appendHostName(targetUrlBuilder);
+			appendSchemaName(targetUrlBuilder, schemaName);
+			appendUrlArgs(targetUrlBuilder);
+			schemaContainer.setTargetUrl(targetUrlBuilder.toString());
+			if(userCredentialsProvided() && !propertiesInfoProvided()) {
+				schemaContainer.setUserName(username);
+				schemaContainer.setPassword(password);
+				schemaContainer.setCredentialsNoProperties(true);
+			}
+			else if(!userCredentialsProvided() && propertiesInfoProvided()) {
+				schemaContainer.setPropertiesInfo(info);
+				schemaContainer.setPropertiesNoCredentials(true);
+			}
+			else if(!userCredentialsProvided() && !propertiesInfoProvided()) {
+				schemaContainer.setNoPropertiesNoCredentials(true);
+			}
 		}
-		updateConstructedUrlForSchema(schemaName);
-
-		if(userCredentialsProvided() && !propertiesInfoProvided()) {
-			connection = JdbpConnectionManager.getConnection(schemaName, username, password);
-		}
-		else if(!userCredentialsProvided() && propertiesInfoProvided()) {
-			connection = JdbpConnectionManager.getConnection(schemaName, info);
-		}
-		else if(!userCredentialsProvided() && !propertiesInfoProvided()) {
-			connection = JdbpConnectionManager.getConnection(schemaName);
-		}
-
-		return connection;
+		return schemaContainer;
 	}
 
-	private static String appendUrlArgs() {
-		StringBuilder sb = new StringBuilder(url + "?");
+	private static IndexedPoolableConnection getValidConnection(String schemaName) throws JdbpException {
+		SchemaContainer schemaContainer = JdbpSchemaManager.fetchDB(schemaName);
+		if(schemaContainer == null) {
+			schemaContainer = buildSchemaContainerFromProperties(schemaName);
+		}
+		return JdbpConnectionManager.getConnection(schemaContainer);
+	}
+
+	private static void appendDriverClassAndUrlScheme(StringBuilder targetUrlBuilder) {
+		String connectionString = JdbpDriverUtil.getDriverClassFlagForDriverName(requestedDriverName);
+		if(loadBalanced && JdbpDriverUtil.isLoadBalancedSupportedForDriverName(requestedDriverName)) {
+			connectionString = connectionString + JdbpDriverUtil.getLoadBalancedFlagForDriverName(requestedDriverName);
+		}
+		// TODO add in additional cases for replication, etc...
+		targetUrlBuilder.append(connectionString);
+		targetUrlBuilder.append("//");
+	}
+
+	private static void appendHostName(StringBuilder targetUrlBuilder) {
+		List<String> hostNames = JdbpHostManager.getHostNames();
+		int commaIndex = 0;
+		for(String hostName: hostNames) {
+			targetUrlBuilder.append(hostName);
+			if(commaIndex < hostNames.size() - 1) {
+				targetUrlBuilder.append(",");
+				commaIndex++;
+			}
+			else {
+				targetUrlBuilder.append("/");
+			}
+		}
+	}
+
+	private static void appendSchemaName(StringBuilder targetUrlBuilder, String schemaName) {
+		String formattedHostName = targetUrlBuilder.toString();
+		if(formattedHostName.charAt(formattedHostName.length() - 1) != 0x2F) {
+			targetUrlBuilder.append("/");
+		}
+		targetUrlBuilder.append(schemaName);
+	}
+
+	private static void appendUrlArgs(StringBuilder targetUrlBuilder) {
+		targetUrlBuilder.append("?");
 		int argIndex = 1;
 		for(Entry<String, String> paramArgPair: urlParamArgPairs.entrySet()) {
-			sb.append(paramArgPair.getKey() + "=" + paramArgPair.getValue());
+			targetUrlBuilder.append(paramArgPair.getKey() + "=" + paramArgPair.getValue());
 			if(argIndex >= 1 && argIndex < urlParamArgPairs.size() && argIndex != urlParamArgPairs.size()) {
-				sb.append("&");
+				targetUrlBuilder.append("&");
 			}
 			argIndex++;
 		}
-		return sb.toString();
-	}
-
-	private static String appendSchemaName(String schemaName) {
-		if(url.charAt(url.length() - 1) != 0x2F) {
-			url = url + 0x2F;
-		}
-		return url + schemaName;
 	}
 
 	private static boolean userCredentialsProvided() {
@@ -128,36 +172,10 @@ public class JdbpDriverManager {
 	}
 
 	/**
-	 * Currently only a one to one mapping for schema names and constructed urls
-	 * 
-	 * @param schemaName
-	 */
-	private static void updateConstructedUrlForSchema(String schemaName) {
-		if(url != null) {
-			constructedUrlsForSchema.put(schemaName, url);
-		}
-	}
-
-	/**
 	 * @param driver
 	 */
 	public static void setDriver(Driver driver) {
 		JdbpDriverManager.driver = driver;
-	}
-
-	/**
-	 * @param url
-	 */
-	public static void setUrl(String url) {
-		JdbpDriverManager.url = url;
-	}
-
-	/**
-	 * @param schemaName
-	 * @return constructed url for schema name, else, available url field in JdbpDriverManager
-	 */
-	public static String getUrlForSchemaName(String schemaName) {
-		return constructedUrlsForSchema.get(schemaName) != null ? constructedUrlsForSchema.get(schemaName) : url;
 	}
 
 	/**
@@ -184,5 +202,15 @@ public class JdbpDriverManager {
 	 */
 	public static void setPassword(String password) {
 		JdbpDriverManager.password = password;
+	}
+
+	public static void setLoadBalanced(String isLoadBalanced) {
+		if(Boolean.getBoolean(isLoadBalanced)) {
+			JdbpDriverManager.loadBalanced = Boolean.getBoolean(isLoadBalanced);
+		}
+	}
+
+	public static void setRequestedDriverName(String requestedDriverName) {
+		JdbpDriverManager.requestedDriverName = requestedDriverName;
 	}
 }

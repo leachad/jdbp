@@ -4,6 +4,8 @@
 package db;
 
 import java.sql.Driver;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.ServiceLoader;
@@ -19,7 +21,9 @@ import java.util.Set;
 public class JdbpDriverLocator {
 
 	private static final String REQUESTED_DRIVER_NAME = "requestedDriverName";
-	private static final String URL = "url";
+	private static final String DRIVER_CLASS = "driverClass";
+	private static final String HOST_NAMES = "hostNames";
+	private static final String SCHEMA_NAMES = "schemaNames";
 	private static final String URL_PARAMS = "urlParams";
 	private static final String USERNAME = "username";
 	private static final String PASSWORD = "password";
@@ -38,9 +42,15 @@ public class JdbpDriverLocator {
 		for(String key: keySet) {
 			if(key.equals(REQUESTED_DRIVER_NAME)) {
 				driver = JdbpDriverLocator.locateDriver(jdbpProps.getString(key));
+				JdbpDriverManager.setRequestedDriverName(jdbpProps.getString(key));
 			}
-			else if(key.equals(URL)) {
-				JdbpDriverManager.setUrl(jdbpProps.getString(key));
+			else if(key.equals(HOST_NAMES)) {
+				List<String> hostNames = getHostNames(jdbpProps.getString(key));
+				JdbpHostManager.setHostNames(hostNames);
+			}
+			else if(key.equals(SCHEMA_NAMES)) {
+				List<String> schemaNames = getSchemaNames(jdbpProps.getString(key));
+				JdbpSchemaManager.setSchemaNames(schemaNames);
 			}
 			else if(key.equals(URL_PARAMS)) {
 				JdbpDriverManager.setUrlParams(jdbpProps.getString(key));
@@ -58,9 +68,9 @@ public class JdbpDriverLocator {
 	}
 
 	/**
-	 * Locates the first valid driver in the classPath
+	 * Utility method to locate the first valid JDBC driver in the classPath
 	 * 
-	 * @return
+	 * @return the validDriver instance
 	 */
 	public static Driver locateDriver() {
 		ServiceLoader<java.sql.Driver> sqlDriverLoader = ServiceLoader.load(java.sql.Driver.class);
@@ -69,10 +79,11 @@ public class JdbpDriverLocator {
 	}
 
 	/**
-	 * Used if your application has more than one driver supporting the same protocol
+	 * Utility method to locate the requested driver by driverName if you have more than one driver in the classpath supporting the same JDBC
+	 * protocol(s)
 	 * 
 	 * @param driverName
-	 * @return
+	 * @return the requestedDriver instance
 	 */
 	public static Driver locateDriver(String driverName) {
 		ServiceLoader<java.sql.Driver> sqlDriverLoader = ServiceLoader.load(java.sql.Driver.class);
@@ -89,14 +100,27 @@ public class JdbpDriverLocator {
 		return requestedDriver;
 	}
 
-	/**
-	 * @param driverName
-	 * @param clazz
-	 * @return drivers equivalency as determined requested driver name
-	 */
 	private static boolean isDriverEquivalent(String driverName, Class<? extends Driver> clazz) {
 		Class<?> driverClass = clazz.getClass();
 		String className = driverClass.getName().toLowerCase();
 		return className.toLowerCase().contains(driverName);
+	}
+
+	private static List<String> getHostNames(String hostNamesPropertyString) {
+		String[] hostNameArray = hostNamesPropertyString.split("[,]");
+		List<String> hostNames = new ArrayList<>();
+		for(String hostName: hostNameArray) {
+			hostNames.add(hostName);
+		}
+		return hostNames;
+	}
+
+	private static List<String> getSchemaNames(String schemaNamesPropertyString) {
+		String[] schemaNameArray = schemaNamesPropertyString.split("[,]");
+		List<String> schemaNames = new ArrayList<>();
+		for(String schemaName: schemaNameArray) {
+			schemaNames.add(schemaName);
+		}
+		return schemaNames;
 	}
 }

@@ -1,14 +1,18 @@
 package db;
 
+import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
+ * Wrapper object for driver's implementation of javax.sql.Connection.
+ * 
  * @since 12.16.16
  * @author andrew.leach
  */
-public class IndexedPoolableConnection {
-	private Connection connection;
+public class IndexedPoolableConnection implements Serializable {
+	private static final long serialVersionUID = 610294057357110457L;
+	private transient Connection connection;
 	private String schemaName;
 	private int connectionId;
 	private boolean available;
