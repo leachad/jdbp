@@ -3,13 +3,12 @@
  */
 package db;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
 import exception.JdbpException;
+import model.DBInfo;
 
 /**
  * @author andrew.leach
@@ -29,20 +28,26 @@ public class SchemaContainer extends AbstractDB {
 	private boolean noPropertiesNoCredentials;
 
 	/**
+	 * @param rawQueryString
+	 * @param containerClass
+	 *        is the container class definition for the query results returned
+	 * @return List<DBInfo>
 	 * @throws JdbpException
 	 */
-	public ResultSet executeQuery(String rawQueryString) throws JdbpException {
-		IndexedPoolableConnection indexedConnection = JdbpDriverManager.getConnection(schemaName);
-		ResultSet resultSet = null;
-		try {
-			Statement statement = indexedConnection.getConnection().createStatement();
-			resultSet = statement.executeQuery(rawQueryString);
-			indexedConnection.release();
-		}
-		catch(SQLException e) {
-			JdbpException.throwException(e);
-		}
-		return resultSet;
+	public List<DBInfo> executeQuery(String rawQueryString, Class<? extends DBInfo> containerClass) throws JdbpException {
+		return executeRawQueryStatement(schemaName, rawQueryString, containerClass);
+	}
+
+	/**
+	 * @param procedureName
+	 * @param containerClass
+	 * @return List<DBInfo>
+	 * @throws JdbpException
+	 */
+	public List<DBInfo> executeStoredProcedure(String procedureName, Class<? extends DBInfo> containerClass) throws JdbpException {
+		StatementContainer statementInfo = prepareStatementInfo(procedureName);
+		return executeCallableStatement(procedureName, statementInfo, containerClass);
+
 	}
 
 	/**

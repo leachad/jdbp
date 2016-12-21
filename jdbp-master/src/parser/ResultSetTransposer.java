@@ -5,13 +5,58 @@ import java.lang.reflect.Modifier;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Types;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import exception.JdbpException;
 import model.DBInfo;
 
 public class ResultSetTransposer {
+
+	// TODO Fully implement this method
+	public static List<DBInfo> transposeResultSet(ResultSet resultSet, Class<? extends DBInfo> clazz) throws JdbpException {
+		List<DBInfo> infoList = new ArrayList<>();
+		try {
+			while(resultSet.next()) {
+				ResultSetMetaData resultSetData;
+
+				resultSetData = resultSet.getMetaData();
+
+				int columnCount = resultSetData.getColumnCount();
+				DBInfo dbInfo = null;
+				try {
+					dbInfo = clazz.newInstance();
+				}
+				catch(InstantiationException | IllegalAccessException e) {
+					JdbpException.throwException(e);
+				}
+				if(dbInfo != null) {
+					for(int i = 1; i < columnCount + 1; i++) {
+						if(resultSetData != null && resultSetData.getColumnType(i) == Types.INTEGER) {
+							dbInfo.putInteger(i, resultSet.getInt(i));
+						}
+						else if(resultSetData != null && resultSetData.getColumnType(i) == Types.VARCHAR) {
+							dbInfo.putString(i, resultSet.getString(i));
+						}
+						else if(resultSetData != null && resultSetData.getColumnType(i) == Types.FLOAT) {
+							dbInfo.putFloat(i, resultSet.getFloat(i));
+						}
+						else if(resultSetData != null && resultSetData.getColumnType(i) == Types.DATE) {
+							dbInfo.putDate(i, resultSet.getDate(i));
+						}
+					}
+					infoList.add(dbInfo);
+				}
+			}
+		}
+		catch(SQLException e) {
+			JdbpException.throwException(e);
+		}
+		return infoList;
+	}
 
 	public static <T extends DBInfo> T transposeResultSetRow(ResultSet resultSet, Class<T> returnClass) throws JdbpException {
 		if(!returnClass.getSuperclass().equals(DBInfo.class)) {

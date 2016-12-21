@@ -42,6 +42,11 @@ public class IndexedPoolableConnection implements Serializable {
 		return connectionId;
 	}
 
+	/**
+	 * Wrapper method for the java.sql.Connection interface contained in IndexedPoolableConnection
+	 * 
+	 * @throws SQLException
+	 */
 	public boolean isClosed() throws SQLException {
 		return connection.isClosed();
 	}
@@ -59,6 +64,28 @@ public class IndexedPoolableConnection implements Serializable {
 	 */
 	public void release() {
 		this.available = true;
+	}
+
+	/**
+	 * Wrapper method for the java.sql.Connection interface contained in IndexedPoolableConnection
+	 * 
+	 * @throws SQLException
+	 */
+	public void commit() throws SQLException {
+		if(!connection.getAutoCommit()) {
+			connection.commit();
+		}
+	}
+
+	/**
+	 * Wrapper method for the java.sql.Connection interface contained in IndexedPoolableConnection
+	 * 
+	 * @throws SQLException
+	 */
+	public void rollback() throws SQLException {
+		if(!connection.getAutoCommit()) {
+			connection.rollback();
+		}
 	}
 
 	/**

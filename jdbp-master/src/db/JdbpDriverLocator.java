@@ -21,7 +21,7 @@ import java.util.Set;
 public class JdbpDriverLocator {
 
 	private static final String REQUESTED_DRIVER_NAME = "requestedDriverName";
-	private static final String DRIVER_CLASS = "driverClass";
+	private static final String LOAD_BALANCED = "loadBalanced";
 	private static final String HOST_NAMES = "hostNames";
 	private static final String SCHEMA_NAMES = "schemaNames";
 	private static final String URL_PARAMS = "urlParams";
@@ -43,6 +43,9 @@ public class JdbpDriverLocator {
 			if(key.equals(REQUESTED_DRIVER_NAME)) {
 				driver = JdbpDriverLocator.locateDriver(jdbpProps.getString(key));
 				JdbpDriverManager.setRequestedDriverName(jdbpProps.getString(key));
+			}
+			else if(key.equals(LOAD_BALANCED)) {
+				JdbpDriverManager.setLoadBalanced(jdbpProps.getString(key));
 			}
 			else if(key.equals(HOST_NAMES)) {
 				List<String> hostNames = getHostNames(jdbpProps.getString(key));
