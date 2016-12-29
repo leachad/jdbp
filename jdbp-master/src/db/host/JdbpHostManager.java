@@ -1,7 +1,7 @@
 /**
  * 
  */
-package db;
+package db.host;
 
 import java.util.List;
 

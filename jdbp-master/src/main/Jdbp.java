@@ -1,8 +1,12 @@
 /**
  * 
  */
-package db;
+package main;
 
+import db.driver.JdbpDriverLocator;
+import db.properties.JdbpPropertySetManager;
+import db.schema.JdbpSchemaManager;
+import db.schema.SchemaContainer;
 import exception.JdbpException;
 
 /**
@@ -22,7 +26,8 @@ public class Jdbp {
 	 */
 	public static void initialize() throws JdbpException {
 		JdbpDriverLocator.findJdbcDriver();
-		JdbpDriverUtil.readDriverUtilProperties();
+		JdbpPropertySetManager.loadAllProperties();
+		JdbpSchemaManager.createAllSchemasFromProperties();
 	}
 
 	/**

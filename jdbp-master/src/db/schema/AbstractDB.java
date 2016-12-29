@@ -1,4 +1,4 @@
-package db;
+package db.schema;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -6,8 +6,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
+import db.connection.IndexedPoolableConnection;
+import db.connection.JdbpConnectionManager;
+import db.model.DBInfo;
+import db.statement.StatementContainer;
 import exception.JdbpException;
-import model.DBInfo;
 import parser.ResultSetTransposer;
 
 /**

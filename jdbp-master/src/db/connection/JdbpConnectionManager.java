@@ -1,4 +1,4 @@
-package db;
+package db.connection;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -7,6 +7,8 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+import db.schema.JdbpSchemaManager;
+import db.schema.SchemaContainer;
 import exception.JdbpException;
 
 /**
@@ -31,7 +33,7 @@ public class JdbpConnectionManager {
 	 * @return an implementation of javax.sql.Connection
 	 * @throws JdbpException
 	 */
-	protected static IndexedPoolableConnection getConnection(SchemaContainer schemaContainer) throws JdbpException {
+	public static IndexedPoolableConnection getConnection(SchemaContainer schemaContainer) throws JdbpException {
 		return getAvailableConnection(schemaContainer);
 	}
 
@@ -40,7 +42,7 @@ public class JdbpConnectionManager {
 	 * @return an implementation of javax.sql.Connection
 	 * @throws JdbpException
 	 */
-	protected static IndexedPoolableConnection getConnection(String schemaName) throws JdbpException {
+	public static IndexedPoolableConnection getConnection(String schemaName) throws JdbpException {
 		return getAvailableConnection(JdbpSchemaManager.fetchDB(schemaName));
 	}
 

@@ -1,4 +1,4 @@
-package db;
+package db.driver;
 
 import java.sql.Connection;
 import java.sql.Driver;
@@ -11,6 +11,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
+import db.connection.IndexedPoolableConnection;
+import db.connection.JdbpConnectionManager;
+import db.host.JdbpHostManager;
+import db.properties.util.JdbpDriverUtil;
+import db.schema.JdbpSchemaManager;
+import db.schema.SchemaContainer;
+import db.statement.StatementContainer;
+import db.statement.StatementUtil;
 import exception.JdbpException;
 
 /**
@@ -30,13 +38,15 @@ public class JdbpDriverManager {
 	private static Properties info;
 	private static boolean loadBalanced;
 	private static String requestedDriverName;
+	private static boolean propDefinedStatements;
+	private static boolean dbDefinedStatements;
 
 	private JdbpDriverManager() {
 		// private do nothing constructor to hide the implicit constructor
 	}
 
 	/**
-	 * @param driver
+	 * @param db.driver
 	 * @param driverAction
 	 * @throws JdbpException
 	 */
@@ -106,6 +116,16 @@ public class JdbpDriverManager {
 			else if(!userCredentialsProvided() && !propertiesInfoProvided()) {
 				schemaContainer.setNoPropertiesNoCredentials(true);
 			}
+			if(propDefinedStatements || dbDefinedStatements) {
+				List<StatementContainer> statements = null;
+				if(propDefinedStatements) {
+					statements = StatementUtil.constructStatementContainersWithResourceBundle(schemaName);
+				}
+				else {
+					statements = StatementUtil.constructStatementContainersWithClientTable();
+				}
+				schemaContainer.setAvailableStatements(statements);
+			}
 		}
 		return schemaContainer;
 	}
@@ -172,7 +192,7 @@ public class JdbpDriverManager {
 	}
 
 	/**
-	 * @param driver
+	 * @param db.driver
 	 */
 	public static void setDriver(Driver driver) {
 		JdbpDriverManager.driver = driver;
@@ -212,5 +232,18 @@ public class JdbpDriverManager {
 
 	public static void setRequestedDriverName(String requestedDriverName) {
 		JdbpDriverManager.requestedDriverName = requestedDriverName;
+	}
+
+	public static void setPropDefinedStatements(String propDefinedStatements) {
+		if(Boolean.getBoolean(propDefinedStatements)) {
+			JdbpDriverManager.propDefinedStatements = Boolean.getBoolean(propDefinedStatements);
+		}
+
+	}
+
+	public static void setDbDefinedStatements(String dbDefinedStatements) {
+		if(Boolean.getBoolean(dbDefinedStatements)) {
+			JdbpDriverManager.dbDefinedStatements = Boolean.getBoolean(dbDefinedStatements);
+		}
 	}
 }

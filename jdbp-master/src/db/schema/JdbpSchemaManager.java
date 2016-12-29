@@ -1,12 +1,14 @@
 /**
  * 
  */
-package db;
+package db.schema;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import db.driver.JdbpDriverManager;
 import exception.JdbpException;
 
 /**
@@ -14,7 +16,7 @@ import exception.JdbpException;
  */
 public class JdbpSchemaManager {
 	private static Map<String, SchemaContainer> schemaMap = new HashMap<>();
-	private static List<String> schemaNames = null;
+	private static List<String> schemaNames = new ArrayList<>();
 
 	/**
 	 * @param schemaName
@@ -31,7 +33,16 @@ public class JdbpSchemaManager {
 	}
 
 	public static void setSchemaNames(List<String> schemaNames) {
-		JdbpSchemaManager.schemaNames = schemaNames;
+		JdbpSchemaManager.schemaNames.addAll(schemaNames);
+	}
+
+	public static void createAllSchemasFromProperties() throws JdbpException {
+		if(schemaNames != null) {
+			for(String schemaName: schemaNames) {
+				SchemaContainer dbInstance = createNewSchema(schemaName);
+				schemaMap.put(schemaName, dbInstance);
+			}
+		}
 	}
 
 	private static SchemaContainer createNewSchema(String schemaName) throws JdbpException {

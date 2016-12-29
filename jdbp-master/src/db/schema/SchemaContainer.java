@@ -1,14 +1,15 @@
 /**
  * 
  */
-package db;
+package db.schema;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import db.model.DBInfo;
+import db.statement.StatementContainer;
 import exception.JdbpException;
-import model.DBInfo;
 
 /**
  * @author andrew.leach
@@ -26,6 +27,7 @@ public class SchemaContainer extends AbstractDB {
 	private boolean credentialsNoProperties;
 	private boolean propertiesNoCredentials;
 	private boolean noPropertiesNoCredentials;
+	private List<StatementContainer> statements;
 
 	/**
 	 * @param rawQueryString
@@ -156,5 +158,13 @@ public class SchemaContainer extends AbstractDB {
 
 	public void setNoPropertiesNoCredentials(boolean noPropertiesNoCredentials) {
 		this.noPropertiesNoCredentials = noPropertiesNoCredentials;
+	}
+
+	public void setAvailableStatements(List<StatementContainer> statements) {
+		this.statements = statements;
+	}
+
+	public List<StatementContainer> getAvailableStatements() {
+		return statements;
 	}
 }

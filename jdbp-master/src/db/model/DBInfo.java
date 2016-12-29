@@ -1,4 +1,4 @@
-package model;
+package db.model;
 
 import java.sql.Date;
 import java.util.Arrays;
@@ -6,7 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Refactor DBInfo into an abstract class
+ * TODO Refactor DBInfo into an abstract class AND Add realistic method signatures that maintain order based on column index in DBinfo implementation
  * 
  * @author andrew.leach
  */

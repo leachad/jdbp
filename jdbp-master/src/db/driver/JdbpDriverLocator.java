@@ -1,7 +1,7 @@
 /**
  * 
  */
-package db;
+package db.driver;
 
 import java.sql.Driver;
 import java.util.ArrayList;
@@ -11,9 +11,12 @@ import java.util.ResourceBundle;
 import java.util.ServiceLoader;
 import java.util.Set;
 
+import db.host.JdbpHostManager;
+import db.schema.JdbpSchemaManager;
+
 /**
- * Utility to obtain the driver in the classpath, check if it is compatible against the predefined list of drivers and register it with the driver
- * manager
+ * Utility to obtain the db.driver in the classpath, check if it is compatible against the predefined list of drivers and register it with the
+ * db.driver manager
  * 
  * @since 12.1.2016
  * @author andrew.leach
@@ -27,6 +30,9 @@ public class JdbpDriverLocator {
 	private static final String URL_PARAMS = "urlParams";
 	private static final String USERNAME = "username";
 	private static final String PASSWORD = "password";
+	private static final String PROP_DEFINED_STATEMENTS = "propDefinedStatements";
+	private static final String DB_DEFINED_STATEMENTS = "dbDefinedStatements";
+
 	private static Driver driver = null;
 
 	private JdbpDriverLocator() {
@@ -34,7 +40,7 @@ public class JdbpDriverLocator {
 	}
 
 	/**
-	 * Find the appropriate jdbc driver based on property files and availability in the classpath
+	 * Find the appropriate jdbc db.driver based on property files and availability in the classpath
 	 */
 	public static void findJdbcDriver() {
 		ResourceBundle jdbpProps = ResourceBundle.getBundle("resources.jdbp", Locale.getDefault());
@@ -64,6 +70,12 @@ public class JdbpDriverLocator {
 			else if(key.equals(PASSWORD)) {
 				JdbpDriverManager.setPassword(jdbpProps.getString(key));
 			}
+			else if(key.equals(PROP_DEFINED_STATEMENTS)) {
+				JdbpDriverManager.setPropDefinedStatements(jdbpProps.getString(key));
+			}
+			else if(key.equals(DB_DEFINED_STATEMENTS)) {
+				JdbpDriverManager.setDbDefinedStatements(jdbpProps.getString(key));
+			}
 		}
 		if(driver == null) {
 			driver = locateDriver();
@@ -71,7 +83,7 @@ public class JdbpDriverLocator {
 	}
 
 	/**
-	 * Utility method to locate the first valid JDBC driver in the classPath
+	 * Utility method to locate the first valid JDBC db.driver in the classPath
 	 * 
 	 * @return the validDriver instance
 	 */
@@ -82,7 +94,7 @@ public class JdbpDriverLocator {
 	}
 
 	/**
-	 * Utility method to locate the requested driver by driverName if you have more than one driver in the classpath supporting the same JDBC
+	 * Utility method to locate the requested db.driver by driverName if you have more than one db.driver in the classpath supporting the same JDBC
 	 * protocol(s)
 	 * 
 	 * @param driverName

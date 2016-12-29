@@ -11,8 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import db.model.DBInfo;
 import exception.JdbpException;
-import model.DBInfo;
 
 public class ResultSetTransposer {
 
@@ -58,9 +58,15 @@ public class ResultSetTransposer {
 		return infoList;
 	}
 
+	/**
+	 * @param resultSet
+	 * @param returnClass
+	 * @return
+	 * @throws JdbpException
+	 */
 	public static <T extends DBInfo> T transposeResultSetRow(ResultSet resultSet, Class<T> returnClass) throws JdbpException {
 		if(!returnClass.getSuperclass().equals(DBInfo.class)) {
-			JdbpException.throwException("Cannot process the requested class safely");
+			JdbpException.throwException(JdbpParserConstants.ERROR_REQUESTED_OBJECT_NOT_CHILD_OF_DBINFO);
 		}
 		T transposedObject = null;
 		try {
@@ -95,32 +101,50 @@ public class ResultSetTransposer {
 				if(currentField != null && !Modifier.isFinal(currentField.getModifiers()) && !Modifier.isStatic(currentField.getModifiers())) {
 					if(currentField.getType().equals(int.class) || currentField.getType().equals(Integer.class)) {
 						fieldValue = new Integer(resultSet.getInt(i));
+						currentField.setInt(transposedObject, (int)fieldValue);
 					}
 					else if(currentField.getType().equals(double.class) || currentField.getType().equals(Double.class)) {
 						fieldValue = new Double(resultSet.getDouble(i));
+						currentField.setDouble(transposedObject, (double)fieldValue);
 					}
 					else if(currentField.getType().equals(short.class) || currentField.getType().equals(Short.class)) {
 						fieldValue = new Short(resultSet.getShort(i));
+						currentField.setShort(transposedObject, (short)fieldValue);
 					}
 					else if(currentField.getType().equals(long.class) || currentField.getType().equals(Long.class)) {
 						fieldValue = new Long(resultSet.getLong(i));
+						currentField.setLong(transposedObject, (long)fieldValue);
 					}
 					else if(currentField.getType().equals(byte.class) || currentField.getType().equals(Byte.class)) {
 						fieldValue = new Byte(resultSet.getByte(i));
+						currentField.setByte(transposedObject, (byte)fieldValue);
 					}
 					else if(currentField.getType().equals(float.class) || currentField.getType().equals(Float.class)) {
 						fieldValue = new Float(resultSet.getFloat(i));
+						currentField.setFloat(transposedObject, (float)fieldValue);
 					}
 					else if(currentField.getType().equals(boolean.class) || currentField.getType().equals(Boolean.class)) {
 						fieldValue = new Boolean(resultSet.getBoolean(i));
+						currentField.setBoolean(transposedObject, (boolean)fieldValue);
 					}
-					else if((currentField.getType().equals(String.class)) || (currentField.getType().equals(char.class) || currentField.getType().equals(Character.class))) {
+					else if(currentField.getType().equals(String.class)) {
 						fieldValue = new String(resultSet.getString(i));
+						currentField.set(transposedObject, fieldValue);
+					}
+					else if(currentField.getType().equals(char.class) || currentField.getType().equals(Character.class)) {
+						String charValue = new String(resultSet.getString(i));
+						char[] charArray = charValue.toCharArray();
+						fieldValue = new Character(charArray[0]);
+						currentField.setChar(transposedObject, (char)fieldValue);
+					}
+					else {
+						Object object = resultSet.getObject(i);
+						currentField.set(transposedObject, object);
 					}
 				}
 			}
 		}
-		catch(SQLException e) {
+		catch(SQLException | IllegalArgumentException | IllegalAccessException e) {
 			JdbpException.throwException(e);
 		}
 		return transposedObject;

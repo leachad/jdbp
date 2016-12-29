@@ -1,7 +1,7 @@
 /**
  * 
  */
-package db;
+package db.host;
 
 /**
  * @author andrew.leach

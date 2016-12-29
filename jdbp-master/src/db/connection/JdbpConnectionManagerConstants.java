@@ -1,4 +1,4 @@
-package db;
+package db.connection;
 
 public class JdbpConnectionManagerConstants {
 

@@ -1,11 +1,11 @@
-package db;
+package db.connection;
 
 import java.io.Serializable;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
- * Wrapper object for driver's implementation of javax.sql.Connection.
+ * Wrapper object for db.driver's implementation of javax.sql.Connection.
  * 
  * @since 12.16.16
  * @author andrew.leach
