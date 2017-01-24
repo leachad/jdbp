@@ -11,8 +11,8 @@ import java.util.ResourceBundle;
 import java.util.ServiceLoader;
 import java.util.Set;
 
-import jdbp.db.host.JdbpHostManager;
-import jdbp.db.schema.JdbpSchemaManager;
+import jdbp.db.host.HostManager;
+import jdbp.db.schema.SchemaManager;
 
 /**
  * Utility to obtain the jdbp.db.driver in the classpath, check if it is compatible against the predefined list of drivers and register it with the
@@ -21,7 +21,7 @@ import jdbp.db.schema.JdbpSchemaManager;
  * @since 12.1.2016
  * @author andrew.leach
  */
-public class JdbpDriverLocator {
+public class DriverLocator {
 
 	private static final String REQUESTED_DRIVER_NAME = "requestedDriverName";
 	private static final String LOAD_BALANCED = "loadBalanced";
@@ -35,7 +35,7 @@ public class JdbpDriverLocator {
 
 	private static Driver driver = null;
 
-	private JdbpDriverLocator() {
+	private DriverLocator() {
 		// private constructor to hide the default public constructor
 	}
 
@@ -47,38 +47,39 @@ public class JdbpDriverLocator {
 		Set<String> keySet = jdbpProps.keySet();
 		for(String key: keySet) {
 			if(key.equals(REQUESTED_DRIVER_NAME)) {
-				driver = JdbpDriverLocator.locateDriver(jdbpProps.getString(key));
-				JdbpDriverManager.setRequestedDriverName(jdbpProps.getString(key));
+				String requestedDriverName = jdbpProps.getString(key);
+				driver = DriverLocator.locateDriver(requestedDriverName);
+				SchemaManager.setRequestedDriverName(requestedDriverName);
 			}
 			else if(key.equals(LOAD_BALANCED)) {
-				JdbpDriverManager.setLoadBalanced(jdbpProps.getString(key));
+				SchemaManager.setLoadBalanced(jdbpProps.getString(key));
 			}
 			else if(key.equals(HOST_NAMES)) {
 				List<String> hostNames = getHostNames(jdbpProps.getString(key));
-				JdbpHostManager.setHostNames(hostNames);
+				HostManager.setHostNames(hostNames);
 			}
 			else if(key.equals(SCHEMA_NAMES)) {
 				List<String> schemaNames = getSchemaNames(jdbpProps.getString(key));
-				JdbpSchemaManager.setSchemaNames(schemaNames);
+				SchemaManager.setSchemaNames(schemaNames);
 			}
 			else if(key.equals(URL_PARAMS)) {
-				JdbpDriverManager.setUrlParams(jdbpProps.getString(key));
+				SchemaManager.setUrlParams(jdbpProps.getString(key));
 			}
 			else if(key.equals(USERNAME)) {
-				JdbpDriverManager.setUserName(jdbpProps.getString(key));
+				SchemaManager.setUserName(jdbpProps.getString(key));
 			}
 			else if(key.equals(PASSWORD)) {
-				JdbpDriverManager.setPassword(jdbpProps.getString(key));
+				SchemaManager.setPassword(jdbpProps.getString(key));
 			}
 			else if(key.equals(PROP_DEFINED_STATEMENTS)) {
-				JdbpDriverManager.setPropDefinedStatements(jdbpProps.getString(key));
+				SchemaManager.setPropDefinedStatements(jdbpProps.getString(key));
 			}
 			else if(key.equals(DB_DEFINED_STATEMENTS)) {
-				JdbpDriverManager.setDbDefinedStatements(jdbpProps.getString(key));
+				SchemaManager.setDbDefinedStatements(jdbpProps.getString(key));
 			}
 		}
 		if(driver == null) {
-			driver = locateDriver();
+			driver = DriverLocator.locateDriver();
 		}
 	}
 
@@ -94,8 +95,8 @@ public class JdbpDriverLocator {
 	}
 
 	/**
-	 * Utility method to locate the requested jdbp.db.driver by driverName if you have more than one jdbp.db.driver in the classpath supporting the same JDBC
-	 * protocol(s)
+	 * Utility method to locate the requested jdbp.db.driver by driverName if you have more than one jdbp.db.driver in the classpath supporting the
+	 * same JDBC protocol(s)
 	 * 
 	 * @param driverName
 	 * @return the requestedDriver instance

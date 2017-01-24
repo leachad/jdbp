@@ -5,10 +5,10 @@ package jdbp.main;
 
 import java.util.List;
 
-import jdbp.db.driver.JdbpDriverLocator;
-import jdbp.db.properties.JdbpPropertySetManager;
-import jdbp.db.schema.JdbpSchemaManager;
-import jdbp.db.schema.SchemaContainer;
+import jdbp.db.driver.DriverLocator;
+import jdbp.db.properties.PropertySetManager;
+import jdbp.db.schema.JdbpSchema;
+import jdbp.db.schema.SchemaManager;
 import jdbp.exception.JdbpException;
 
 /**
@@ -24,17 +24,24 @@ public class Jdbp {
 	}
 
 	/**
+	 * Initializes HikariDataSource object for the properties defined in Jdbp properties
+	 * 
 	 * @throws JdbpException
 	 */
 	public static void initialize() throws JdbpException {
-		JdbpDriverLocator.findJdbcDriver();
-		JdbpPropertySetManager.loadAllProperties();
-		JdbpSchemaManager.createAllSchemasFromProperties();
+		DriverLocator.findJdbcDriver();
+		PropertySetManager.loadAllProperties();
+		SchemaManager.createAllSchemasFromProperties();
 	}
 
+	/**
+	 * Invokes the close method on all HikariDataSource objects
+	 * 
+	 * @throws JdbpException
+	 */
 	public static void destroy() throws JdbpException {
-		List<SchemaContainer> schemaContainers = JdbpSchemaManager.getAvailableSchemas();
-		for(SchemaContainer schemaContainer: schemaContainers) {
+		List<JdbpSchema> schemaContainers = SchemaManager.getAvailableSchemas();
+		for(JdbpSchema schemaContainer: schemaContainers) {
 			schemaContainer.closeDataSource();
 		}
 	}
@@ -44,7 +51,7 @@ public class Jdbp {
 	 * @return
 	 * @throws JdbpException
 	 */
-	public static SchemaContainer getDatabase(String schemaName) throws JdbpException {
-		return JdbpSchemaManager.getSchema(schemaName);
+	public static JdbpSchema getDatabase(String schemaName) throws JdbpException {
+		return SchemaManager.getSchema(schemaName);
 	}
 }

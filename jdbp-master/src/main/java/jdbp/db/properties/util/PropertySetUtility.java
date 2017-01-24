@@ -6,16 +6,16 @@ package jdbp.db.properties.util;
 /**
  * @author andrew.leach
  */
-public interface JdbpUtilityPropertySet {
+public interface PropertySetUtility {
 
 	/**
 	 * Read method to implement by each property set in Jdbp
 	 */
-	void readJdbpUtilProperties();
+	void readPropertiesForJdbpUtility();
 
 	/**
 	 * @return the instance of the implementing instance
 	 */
-	JdbpUtilityPropertySet getInstance();
+	PropertySetUtility getInstance();
 
 }

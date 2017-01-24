@@ -3,20 +3,19 @@
  */
 package jdbp.db.statement;
 
-import java.io.Serializable;
+import jdbp.db.statement.StatementManager.CrudOperation;
 
 /**
  * @author andrew.leach
  */
-public class StatementContainer implements Serializable {
+public class JdbpStatement extends AbstractStatement {
+	private CrudOperation crudOperation;
 	private String schemaName;
 	private String tableName;
 	private String typedCallableStatement;
 	private String rawCallableStatement;
 
-	public StatementContainer() {
-
-	}
+	public JdbpStatement() {}
 
 	public void setSchemaName(String schemaName) {
 		this.schemaName = schemaName;
@@ -32,5 +31,29 @@ public class StatementContainer implements Serializable {
 
 	public String getRawCallableStatement() {
 		return rawCallableStatement;
+	}
+
+	public CrudOperation getCrudOperation() {
+		return crudOperation;
+	}
+
+	public void setCrudOperation(CrudOperation crudOperation) {
+		this.crudOperation = crudOperation;
+	}
+
+	public String getTableName() {
+		return tableName;
+	}
+
+	public void setTableName(String tableName) {
+		this.tableName = tableName;
+	}
+
+	public String getSchemaName() {
+		return schemaName;
+	}
+
+	public String getTypedCallableStatement() {
+		return typedCallableStatement;
 	}
 }

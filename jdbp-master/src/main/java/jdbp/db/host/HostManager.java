@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * @author andrew.leach
  */
-public class JdbpHostManager {
+public class HostManager {
 	private static List<String> hostNames = null;
 
 	public static List<String> getHostNames() {
@@ -16,7 +16,7 @@ public class JdbpHostManager {
 	}
 
 	public static void setHostNames(List<String> hostNames) {
-		JdbpHostManager.hostNames = hostNames;
+		HostManager.hostNames = hostNames;
 	}
 
 }

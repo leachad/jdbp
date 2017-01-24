@@ -6,14 +6,14 @@ package jdbp.db.host;
 /**
  * @author andrew.leach
  */
-public class HostContainer {
+public class JdbpHost extends AbstractHost {
 
 	private String hostName;
 
 	/**
 	 * @param hostName
 	 */
-	public HostContainer(String hostName) {
+	public JdbpHost(String hostName) {
 		this.hostName = hostName;
 	}
 

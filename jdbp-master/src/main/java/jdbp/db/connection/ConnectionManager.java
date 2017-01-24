@@ -2,8 +2,8 @@ package jdbp.db.connection;
 
 import java.sql.Connection;
 
-import jdbp.db.schema.JdbpSchemaManager;
-import jdbp.db.schema.SchemaContainer;
+import jdbp.db.schema.SchemaManager;
+import jdbp.db.schema.JdbpSchema;
 import jdbp.exception.JdbpException;
 
 /**
@@ -12,14 +12,14 @@ import jdbp.exception.JdbpException;
  * @since 12.1.2016
  * @author andrew.leach
  */
-public class JdbpConnectionManager {
+public class ConnectionManager {
 
 	/**
 	 * @param schemaContainer
 	 * @return an implementation of javax.sql.Connection
 	 * @throws JdbpException
 	 */
-	public static Connection getConnection(SchemaContainer schemaContainer) throws JdbpException {
+	public static Connection getConnection(JdbpSchema schemaContainer) throws JdbpException {
 		return schemaContainer.getConnection();
 	}
 
@@ -29,7 +29,7 @@ public class JdbpConnectionManager {
 	 * @throws JdbpException
 	 */
 	public static Connection getConnection(String schemaName) throws JdbpException {
-		SchemaContainer schemaContainer = JdbpSchemaManager.getSchema(schemaName);
+		JdbpSchema schemaContainer = SchemaManager.getSchema(schemaName);
 		return getConnection(schemaContainer);
 	}
 }

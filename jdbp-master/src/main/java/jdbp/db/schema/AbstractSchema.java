@@ -7,9 +7,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
 
-import jdbp.db.connection.JdbpConnectionManager;
+import jdbp.db.connection.ConnectionManager;
 import jdbp.db.model.DBInfo;
-import jdbp.db.statement.StatementContainer;
+import jdbp.db.statement.JdbpStatement;
 import jdbp.exception.JdbpException;
 import jdbp.parser.ResultSetTransposer;
 
@@ -17,7 +17,7 @@ import jdbp.parser.ResultSetTransposer;
  * @since 12.1.16
  * @author andrew.leach
  */
-public abstract class AbstractDB extends JdbpConnectionManager {
+public abstract class AbstractSchema extends ConnectionManager {
 
 	/**
 	 * @param dataSourceName
@@ -75,7 +75,7 @@ public abstract class AbstractDB extends JdbpConnectionManager {
 	 * @return
 	 * @throws JdbpException
 	 */
-	protected List<DBInfo> executeCallableStatement(String dataSourceName, StatementContainer procedureInfo, Class<? extends DBInfo> containerClass) throws JdbpException {
+	protected List<DBInfo> executeCallableStatement(String dataSourceName, JdbpStatement procedureInfo, Class<? extends DBInfo> containerClass) throws JdbpException {
 		List<DBInfo> dbInfos = null;
 
 		if(dataSourceName != null) {
@@ -149,8 +149,8 @@ public abstract class AbstractDB extends JdbpConnectionManager {
 	 * @param statementName
 	 * @return statementInfo for processing callable statement TODO Continue improving on this method
 	 */
-	protected StatementContainer prepareStatementInfo(String statementName) {
-		StatementContainer statementInfo = new StatementContainer();
+	protected JdbpStatement prepareStatementInfo(String statementName) {
+		JdbpStatement statementInfo = new JdbpStatement();
 		statementInfo.setRawCallableStatement(statementName);
 		return statementInfo;
 

@@ -13,13 +13,13 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import jdbp.db.model.DBInfo;
-import jdbp.db.statement.StatementContainer;
+import jdbp.db.statement.JdbpStatement;
 import jdbp.exception.JdbpException;
 
 /**
  * @author andrew.leach
  */
-public class SchemaContainer extends AbstractDB {
+public class JdbpSchema extends AbstractSchema {
 
 	private String schemaName;
 	private String requestedDriverName;
@@ -32,7 +32,7 @@ public class SchemaContainer extends AbstractDB {
 	private boolean credentialsNoProperties;
 	private boolean propertiesNoCredentials;
 	private boolean noPropertiesNoCredentials;
-	private List<StatementContainer> statements;
+	private List<JdbpStatement> statements;
 	private boolean hikariEnablesCredentials = false;
 
 	/**
@@ -58,7 +58,7 @@ public class SchemaContainer extends AbstractDB {
 	 * @throws JdbpException
 	 */
 	public List<DBInfo> executeStoredProcedure(String procedureName, Class<? extends DBInfo> containerClass) throws JdbpException {
-		StatementContainer statementInfo = prepareStatementInfo(procedureName);
+		JdbpStatement statementInfo = prepareStatementInfo(procedureName);
 		return executeCallableStatement(procedureName, statementInfo, containerClass);
 
 	}
@@ -66,7 +66,7 @@ public class SchemaContainer extends AbstractDB {
 	/**
 	 * @param schemaName
 	 */
-	public SchemaContainer(String schemaName) {
+	public JdbpSchema(String schemaName) {
 		this.schemaName = schemaName;
 	}
 
@@ -171,11 +171,11 @@ public class SchemaContainer extends AbstractDB {
 		this.noPropertiesNoCredentials = noPropertiesNoCredentials;
 	}
 
-	public void setAvailableStatements(List<StatementContainer> statements) {
+	public void setAvailableStatements(List<JdbpStatement> statements) {
 		this.statements = statements;
 	}
 
-	public List<StatementContainer> getAvailableStatements() {
+	public List<JdbpStatement> getAvailableStatements() {
 		return statements;
 	}
 

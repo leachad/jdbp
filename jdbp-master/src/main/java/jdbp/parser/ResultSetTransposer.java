@@ -54,7 +54,7 @@ public class ResultSetTransposer {
 	 */
 	private static <T extends DBInfo> T transposeResultSetRow(ResultSet resultSet, Class<T> returnClass) throws JdbpException {
 		if(!returnClass.getSuperclass().equals(DBInfo.class)) {
-			JdbpException.throwException(JdbpParserConstants.ERROR_REQUESTED_OBJECT_NOT_CHILD_OF_DBINFO);
+			JdbpException.throwException(ResultSetTransposerConstants.ERROR_REQUESTED_OBJECT_NOT_CHILD_OF_DBINFO);
 		}
 		T transposedObject = null;
 		try {

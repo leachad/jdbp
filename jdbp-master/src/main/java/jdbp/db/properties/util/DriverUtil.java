@@ -6,19 +6,19 @@ import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
 
-import jdbp.db.properties.info.JdbpDriverPropertiesInfo;
+import jdbp.db.properties.info.DriverPropertiesInfo;
 
 /**
  * @since 12.24.16
  * @author andrew.leach
  */
-public class JdbpDriverUtil implements JdbpUtilityPropertySet {
-	private JdbpDriverUtil driverUtil;
-	private static Map<String, JdbpDriverPropertiesInfo> driverUtilProperties = new HashMap<>();
+public class DriverUtil implements PropertySetUtility {
+	private DriverUtil driverUtilInstance;
+	private static Map<String, DriverPropertiesInfo> driverUtilProperties = new HashMap<>();
 
 	@Override
-	public void readJdbpUtilProperties() {
-		ResourceBundle jdbpUtilProps = ResourceBundle.getBundle("resources.jdbpdriver", Locale.getDefault(), JdbpDriverUtil.class.getClassLoader());
+	public void readPropertiesForJdbpUtility() {
+		ResourceBundle jdbpUtilProps = ResourceBundle.getBundle("resources.jdbpdriver", Locale.getDefault(), DriverUtil.class.getClassLoader());
 		Set<String> keySet = jdbpUtilProps.keySet();
 		for(String key: keySet) {
 			driverUtilProperties.put(key.toLowerCase(), buildPropertiesInfo(jdbpUtilProps.getString(key)));
@@ -27,11 +27,11 @@ public class JdbpDriverUtil implements JdbpUtilityPropertySet {
 	}
 
 	@Override
-	public JdbpUtilityPropertySet getInstance() {
-		if(driverUtil == null) {
-			driverUtil = new JdbpDriverUtil();
+	public PropertySetUtility getInstance() {
+		if(driverUtilInstance == null) {
+			driverUtilInstance = new DriverUtil();
 		}
-		return driverUtil;
+		return driverUtilInstance;
 	}
 
 	/**
@@ -66,8 +66,8 @@ public class JdbpDriverUtil implements JdbpUtilityPropertySet {
 		return driverUtilProperties.get(requestedDriverName).isSupportsReplication();
 	}
 
-	private static JdbpDriverPropertiesInfo buildPropertiesInfo(String utilPropsForDriver) {
-		JdbpDriverPropertiesInfo propsInfo = new JdbpDriverPropertiesInfo();
+	private static DriverPropertiesInfo buildPropertiesInfo(String utilPropsForDriver) {
+		DriverPropertiesInfo propsInfo = new DriverPropertiesInfo();
 		String[] valueSubList = utilPropsForDriver.split("[;]");
 		for(String indexedValue: valueSubList) {
 			if(indexedValue.contains("=")) {

@@ -6,7 +6,7 @@ import java.io.Serializable;
  * @since 12.29.16
  * @author andrew.leach
  */
-public class JdbpDriverPropertiesInfo implements Serializable {
+public class DriverPropertiesInfo implements Serializable {
 	private static final long serialVersionUID = -2943279356066920245L;
 
 	private String driverClassLabel;

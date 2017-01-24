@@ -6,16 +6,16 @@ package jdbp.db.statement;
 /**
  * @author andrew.leach
  */
-public class JdbpStatementManager {
+public class StatementManager {
 
 	/**
 	 * @author andrew.leach
 	 */
-	public enum CrudKey {
+	public enum CrudOperation {
 		CREATE("create"), SELECT("select"), UPDATE("update"), DELETE("delete");
 		private String operation;
 
-		CrudKey(String operation) {
+		CrudOperation(String operation) {
 			this.operation = operation;
 		}
 
