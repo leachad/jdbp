@@ -216,4 +216,44 @@ public class SchemaManager {
 			SchemaManager.dbDefinedStatements = Boolean.getBoolean(dbDefinedStatements);
 		}
 	}
+
+	public static Map<String, JdbpSchema> getSchemaMap() {
+		return schemaMap;
+	}
+
+	public static List<String> getSchemaNames() {
+		return schemaNames;
+	}
+
+	public static Map<String, String> getUrlParamArgPairs() {
+		return urlParamArgPairs;
+	}
+
+	public static String getUsername() {
+		return username;
+	}
+
+	public static String getPassword() {
+		return password;
+	}
+
+	public static Properties getInfo() {
+		return info;
+	}
+
+	public static boolean isLoadBalanced() {
+		return loadBalanced;
+	}
+
+	public static String getRequestedDriverName() {
+		return requestedDriverName;
+	}
+
+	public static boolean isPropDefinedStatements() {
+		return propDefinedStatements;
+	}
+
+	public static boolean isDbDefinedStatements() {
+		return dbDefinedStatements;
+	}
 }

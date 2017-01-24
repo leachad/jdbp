@@ -14,6 +14,7 @@ import com.zaxxer.hikari.HikariDataSource;
 
 import jdbp.db.model.DBInfo;
 import jdbp.db.statement.JdbpStatement;
+import jdbp.db.statement.StatementManager.CrudOperation;
 import jdbp.exception.JdbpException;
 
 /**
@@ -49,6 +50,37 @@ public class JdbpSchema extends AbstractSchema {
 	 */
 	public List<DBInfo> executeQuery(String rawQueryString, Class<? extends DBInfo> containerClass) throws JdbpException {
 		return executeRawQueryStatement(schemaName, rawQueryString, containerClass);
+	}
+
+	/**
+	 * @param destinationTableName
+	 * @param crudOperation
+	 * @param infosToUpdate
+	 * @return
+	 * @throws JdbpException
+	 */
+	public boolean executeInsert(String destinationTableName, List<Class<? extends DBInfo>> infosToUpdate) throws JdbpException {
+		return executeRawQueryUpdate(schemaName, CrudOperation.INSERT, destinationTableName, infosToUpdate);
+	}
+
+	/**
+	 * @param destinationTableName
+	 * @param infosToUpdate
+	 * @return
+	 * @throws JdbpException
+	 */
+	public boolean executeUpdate(String destinationTableName, List<Class<? extends DBInfo>> infosToUpdate) throws JdbpException {
+		return executeRawQueryUpdate(schemaName, CrudOperation.UPDATE, destinationTableName, infosToUpdate);
+	}
+
+	/**
+	 * @param destinationTableName
+	 * @param infosToUpdate
+	 * @return
+	 * @throws JdbpException
+	 */
+	public boolean executeDelete(String destinationTableName, List<Class<? extends DBInfo>> infosToUpdate) throws JdbpException {
+		return executeRawQueryUpdate(schemaName, CrudOperation.DELETE, destinationTableName, infosToUpdate);
 	}
 
 	/**

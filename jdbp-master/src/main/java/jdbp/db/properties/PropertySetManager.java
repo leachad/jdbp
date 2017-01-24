@@ -2,6 +2,7 @@ package jdbp.db.properties;
 
 import jdbp.db.properties.util.DriverUtil;
 import jdbp.db.properties.util.PropertySetUtility;
+import jdbp.db.properties.util.SyntaxUtil;
 import jdbp.exception.JdbpException;
 
 /**
@@ -10,7 +11,7 @@ import jdbp.exception.JdbpException;
  */
 public class PropertySetManager {
 
-	private static Class<?>[] jdbpUtilityPropertySets = {DriverUtil.class};
+	private static Class<?>[] jdbpUtilityPropertySets = {DriverUtil.class, SyntaxUtil.class};
 
 	private PropertySetManager() {
 		// private constructor to avoid instantiation of the implicit constructor

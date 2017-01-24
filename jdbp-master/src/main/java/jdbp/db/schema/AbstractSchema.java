@@ -10,7 +10,9 @@ import java.util.List;
 import jdbp.db.connection.ConnectionManager;
 import jdbp.db.model.DBInfo;
 import jdbp.db.statement.JdbpStatement;
+import jdbp.db.statement.StatementManager.CrudOperation;
 import jdbp.exception.JdbpException;
+import jdbp.parser.DbInfoTransposer;
 import jdbp.parser.ResultSetTransposer;
 
 /**
@@ -65,6 +67,50 @@ public abstract class AbstractSchema extends ConnectionManager {
 			}
 		}
 		return dbInfos;
+	}
+
+	/**
+	 * @param dataSourceName
+	 * @param rawUpdateString
+	 * @param infosToUpdate
+	 * @return
+	 * @throws JdbpException
+	 */
+	protected boolean executeRawQueryUpdate(String dataSourceName, CrudOperation crudOperation, String destinationTable, List<Class<? extends DBInfo>> infosToUpdate) throws JdbpException {
+		boolean isSuccess = false;
+		if(dataSourceName != null) {
+			Connection pooledConnection = getConnection(dataSourceName);
+			PreparedStatement rawStatement = null;
+			try {
+				String infosStringToUpdateUnsanitized = DbInfoTransposer.convertDbInfosToSQLString(dataSourceName, destinationTable, crudOperation, infosToUpdate);
+				rawStatement = pooledConnection.prepareStatement(infosStringToUpdateUnsanitized);
+				int result = rawStatement.executeUpdate();
+				isSuccess = result == 1 ? true : false;
+				if(!pooledConnection.getAutoCommit()) {
+					pooledConnection.commit();
+				}
+			}
+			catch(SQLException e) {
+				try {
+					pooledConnection.rollback();
+				}
+				catch(SQLException eE) {
+					JdbpException.throwException(eE);
+				}
+				JdbpException.throwException(e);
+			}
+			finally {
+				try {
+					if(rawStatement != null) {
+						rawStatement.close();
+					}
+				}
+				catch(SQLException e) {
+					JdbpException.throwException(e);
+				}
+			}
+		}
+		return isSuccess;
 	}
 
 	/**
