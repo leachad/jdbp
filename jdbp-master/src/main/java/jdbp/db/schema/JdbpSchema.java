@@ -13,8 +13,8 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import jdbp.db.model.DBInfo;
-import jdbp.db.statement.JdbpStatement;
-import jdbp.db.statement.StatementManager.CrudOperation;
+import jdbp.db.statement.syntax.crud.CrudOperation;
+import jdbp.db.statement.syntax.sproc.JdbpCallableStatement;
 import jdbp.exception.JdbpException;
 
 /**
@@ -33,7 +33,7 @@ public class JdbpSchema extends AbstractSchema {
 	private boolean credentialsNoProperties;
 	private boolean propertiesNoCredentials;
 	private boolean noPropertiesNoCredentials;
-	private List<JdbpStatement> statements;
+	private List<JdbpCallableStatement> statements;
 	private boolean hikariEnablesCredentials = false;
 
 	/**
@@ -59,7 +59,7 @@ public class JdbpSchema extends AbstractSchema {
 	 * @return
 	 * @throws JdbpException
 	 */
-	public boolean executeInsert(String destinationTableName, List<Class<? extends DBInfo>> infosToUpdate) throws JdbpException {
+	public boolean executeInsert(String destinationTableName, List<DBInfo> infosToUpdate) throws JdbpException {
 		return executeRawQueryUpdate(schemaName, CrudOperation.INSERT, destinationTableName, infosToUpdate);
 	}
 
@@ -69,7 +69,7 @@ public class JdbpSchema extends AbstractSchema {
 	 * @return
 	 * @throws JdbpException
 	 */
-	public boolean executeUpdate(String destinationTableName, List<Class<? extends DBInfo>> infosToUpdate) throws JdbpException {
+	public boolean executeUpdate(String destinationTableName, List<DBInfo> infosToUpdate) throws JdbpException {
 		return executeRawQueryUpdate(schemaName, CrudOperation.UPDATE, destinationTableName, infosToUpdate);
 	}
 
@@ -79,7 +79,7 @@ public class JdbpSchema extends AbstractSchema {
 	 * @return
 	 * @throws JdbpException
 	 */
-	public boolean executeDelete(String destinationTableName, List<Class<? extends DBInfo>> infosToUpdate) throws JdbpException {
+	public boolean executeDelete(String destinationTableName, List<DBInfo> infosToUpdate) throws JdbpException {
 		return executeRawQueryUpdate(schemaName, CrudOperation.DELETE, destinationTableName, infosToUpdate);
 	}
 
@@ -90,7 +90,7 @@ public class JdbpSchema extends AbstractSchema {
 	 * @throws JdbpException
 	 */
 	public List<DBInfo> executeStoredProcedure(String procedureName, Class<? extends DBInfo> containerClass) throws JdbpException {
-		JdbpStatement statementInfo = prepareStatementInfo(procedureName);
+		JdbpCallableStatement statementInfo = prepareStatementInfo(procedureName);
 		return executeCallableStatement(procedureName, statementInfo, containerClass);
 
 	}
@@ -203,11 +203,11 @@ public class JdbpSchema extends AbstractSchema {
 		this.noPropertiesNoCredentials = noPropertiesNoCredentials;
 	}
 
-	public void setAvailableStatements(List<JdbpStatement> statements) {
+	public void setAvailableStatements(List<JdbpCallableStatement> statements) {
 		this.statements = statements;
 	}
 
-	public List<JdbpStatement> getAvailableStatements() {
+	public List<JdbpCallableStatement> getAvailableStatements() {
 		return statements;
 	}
 

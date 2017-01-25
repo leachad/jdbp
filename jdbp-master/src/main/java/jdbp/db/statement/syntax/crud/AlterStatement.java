@@ -1,10 +1,4 @@
-package jdbp.db.statement;
-
-import java.util.List;
-
-import jdbp.db.model.DBInfo;
-import jdbp.db.statement.StatementManager.CrudDelimiter;
-import jdbp.db.statement.StatementManager.CrudKeyword;
+package jdbp.db.statement.syntax.crud;
 
 public class AlterStatement implements SyntacticStatement {
 
@@ -21,25 +15,30 @@ public class AlterStatement implements SyntacticStatement {
 	}
 
 	@Override
-	public void setStatementSyntax(String statementSyntax) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
 	public void addDynamicValue(CrudDynamicValue crudDynamicValue) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void appendDBInfos(List<Class<? extends DBInfo>> infosToConvert) {
+	public void addPlainText(String retVal) {
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void addPlainText(String retVal) {
+	public void constructStatementTemplate() {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public String getStatementTemplate() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void addClause(CrudClause crudClause) {
 		// TODO Auto-generated method stub
 
 	}

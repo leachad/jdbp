@@ -13,7 +13,7 @@ import java.util.Properties;
 import jdbp.db.host.HostManager;
 import jdbp.db.properties.util.DriverUtil;
 import jdbp.db.properties.util.StatementUtil;
-import jdbp.db.statement.JdbpStatement;
+import jdbp.db.statement.syntax.sproc.JdbpCallableStatement;
 import jdbp.exception.JdbpException;
 
 /**
@@ -100,7 +100,7 @@ public class SchemaManager {
 			schema.setNoPropertiesNoCredentials(true);
 		}
 		if(propDefinedStatements || dbDefinedStatements) {
-			List<JdbpStatement> statements = null;
+			List<JdbpCallableStatement> statements = null;
 			if(propDefinedStatements) {
 				statements = StatementUtil.constructStatementContainersWithResourceBundle(schemaName);
 			}

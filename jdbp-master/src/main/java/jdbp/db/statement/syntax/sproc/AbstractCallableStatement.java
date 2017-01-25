@@ -1,8 +1,8 @@
-package jdbp.db.statement;
+package jdbp.db.statement.syntax.sproc;
 
 import java.io.Serializable;
 
-public abstract class AbstractStatement implements Serializable {
+public abstract class AbstractCallableStatement implements Serializable {
 
 	/**
 	 * 

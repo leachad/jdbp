@@ -1,6 +1,4 @@
-package jdbp.db.statement;
-
-import jdbp.db.statement.StatementManager.CrudDynamicValueKey;
+package jdbp.db.statement.syntax.crud;
 
 public class CrudDynamicValue {
 

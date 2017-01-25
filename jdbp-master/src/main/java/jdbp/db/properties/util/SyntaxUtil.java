@@ -9,14 +9,26 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import jdbp.db.properties.info.SyntaxPropertiesInfo;
-import jdbp.db.statement.CrudDynamicValue;
-import jdbp.db.statement.InsertStatement;
-import jdbp.db.statement.StatementManager.CrudDelimiter;
-import jdbp.db.statement.StatementManager.CrudDynamicValueKey;
-import jdbp.db.statement.StatementManager.CrudKeyword;
-import jdbp.db.statement.StatementManager.CrudOperation;
-import jdbp.db.statement.SyntacticStatement;
+import jdbp.db.statement.syntax.SyntaxUtilConstants;
+import jdbp.db.statement.syntax.crud.AlterStatement;
+import jdbp.db.statement.syntax.crud.CreateStatement;
+import jdbp.db.statement.syntax.crud.CrudClause;
+import jdbp.db.statement.syntax.crud.CrudDelimiter;
+import jdbp.db.statement.syntax.crud.CrudDynamicValue;
+import jdbp.db.statement.syntax.crud.CrudDynamicValueKey;
+import jdbp.db.statement.syntax.crud.CrudKeyword;
+import jdbp.db.statement.syntax.crud.CrudOperation;
+import jdbp.db.statement.syntax.crud.DeleteStatement;
+import jdbp.db.statement.syntax.crud.DropStatement;
+import jdbp.db.statement.syntax.crud.InsertStatement;
+import jdbp.db.statement.syntax.crud.SelectStatement;
+import jdbp.db.statement.syntax.crud.SyntacticStatement;
+import jdbp.db.statement.syntax.crud.UpdateStatement;
 
+/**
+ * @since 1.24.17
+ * @author andrew.leach
+ */
 public class SyntaxUtil implements PropertySetUtility {
 	private SyntaxUtil syntaxUtilInstance;
 	private static Map<String, Map<CrudOperation, SyntaxPropertiesInfo>> syntaxUtilProperties = new HashMap<>();
@@ -41,10 +53,10 @@ public class SyntaxUtil implements PropertySetUtility {
 	private void separateKeyIntoSubCategoriesAndBuildPropertyInfo(String key, String value) {
 		String[] driverAndCrudOperation = key.split("[.]");
 
-		Map<CrudOperation, SyntaxPropertiesInfo> syntacticStatementsForDriver = syntaxUtilProperties.get(driverAndCrudOperation[0]);
+		Map<CrudOperation, SyntaxPropertiesInfo> syntacticStatementsForDriver = syntaxUtilProperties.get(driverAndCrudOperation[0].toLowerCase());
 		if(syntacticStatementsForDriver == null) {
 			syntacticStatementsForDriver = new HashMap<>();
-			syntaxUtilProperties.put(driverAndCrudOperation[0], syntacticStatementsForDriver);
+			syntaxUtilProperties.put(driverAndCrudOperation[0].toLowerCase(), syntacticStatementsForDriver);
 		}
 
 		SyntaxPropertiesInfo syntaxPropertiesInfo = buildSyntaxPropertiesInfo(driverAndCrudOperation[1], value);
@@ -54,7 +66,7 @@ public class SyntaxUtil implements PropertySetUtility {
 
 	private SyntaxPropertiesInfo buildSyntaxPropertiesInfo(String operation, String value) {
 		SyntaxPropertiesInfo syntaxPropertiesInfo = null;
-		Matcher matcher = Pattern.compile("operation#[A-Za-z]").matcher(value);
+		Matcher matcher = Pattern.compile(SyntaxUtilConstants.RegexConstants.OPERATION_PATTERN).matcher(value);
 		while(matcher.find()) {
 			syntaxPropertiesInfo = new SyntaxPropertiesInfo();
 			CrudOperation crudOperation = CrudOperation.findMatchingOperation(matcher.group());
@@ -69,9 +81,63 @@ public class SyntaxUtil implements PropertySetUtility {
 		SyntaxPropertiesInfo syntaxPropertiesInfo = syntaxUtilProperties.get(driverName).get(CrudOperation.INSERT);
 		SyntacticStatement insertStatement = null;
 		if(syntaxPropertiesInfo != null) {
-			syntaxPropertiesInfo.getSyntacticStatement();
+			insertStatement = syntaxPropertiesInfo.getSyntacticStatement();
 		}
 		return (InsertStatement)insertStatement;
+	}
+
+	public static CreateStatement getSyntacticCreateStatement(String driverName) {
+		SyntaxPropertiesInfo syntaxPropertiesInfo = syntaxUtilProperties.get(driverName).get(CrudOperation.CREATE);
+		SyntacticStatement createStatement = null;
+		if(syntaxPropertiesInfo != null) {
+			createStatement = syntaxPropertiesInfo.getSyntacticStatement();
+		}
+		return (CreateStatement)createStatement;
+	}
+
+	public static DeleteStatement getSyntacticDeleteStatement(String driverName) {
+		SyntaxPropertiesInfo syntaxPropertiesInfo = syntaxUtilProperties.get(driverName).get(CrudOperation.DELETE);
+		SyntacticStatement deleteStatement = null;
+		if(syntaxPropertiesInfo != null) {
+			deleteStatement = syntaxPropertiesInfo.getSyntacticStatement();
+		}
+		return (DeleteStatement)deleteStatement;
+	}
+
+	public static SelectStatement getSyntacticSelectStatement(String driverName) {
+		SyntaxPropertiesInfo syntaxPropertiesInfo = syntaxUtilProperties.get(driverName).get(CrudOperation.SELECT);
+		SyntacticStatement selectStatement = null;
+		if(syntaxPropertiesInfo != null) {
+			selectStatement = syntaxPropertiesInfo.getSyntacticStatement();
+		}
+		return (SelectStatement)selectStatement;
+	}
+
+	public static UpdateStatement getSyntacticUpdateStatement(String driverName) {
+		SyntaxPropertiesInfo syntaxPropertiesInfo = syntaxUtilProperties.get(driverName).get(CrudOperation.UPDATE);
+		SyntacticStatement updateStatement = null;
+		if(syntaxPropertiesInfo != null) {
+			updateStatement = syntaxPropertiesInfo.getSyntacticStatement();
+		}
+		return (UpdateStatement)updateStatement;
+	}
+
+	public static AlterStatement getSyntacticAlterStatement(String driverName) {
+		SyntaxPropertiesInfo syntaxPropertiesInfo = syntaxUtilProperties.get(driverName).get(CrudOperation.ALTER);
+		SyntacticStatement alterStatement = null;
+		if(syntaxPropertiesInfo != null) {
+			alterStatement = syntaxPropertiesInfo.getSyntacticStatement();
+		}
+		return (AlterStatement)alterStatement;
+	}
+
+	public static DropStatement getSyntacticDropStatement(String driverName) {
+		SyntaxPropertiesInfo syntaxPropertiesInfo = syntaxUtilProperties.get(driverName).get(CrudOperation.DROP);
+		SyntacticStatement dropStatement = null;
+		if(syntaxPropertiesInfo != null) {
+			dropStatement = syntaxPropertiesInfo.getSyntacticStatement();
+		}
+		return (DropStatement)dropStatement;
 	}
 
 	private SyntacticStatement buildSyntacticStatement(CrudOperation crudOperation, String value) {
@@ -79,34 +145,38 @@ public class SyntaxUtil implements PropertySetUtility {
 		try {
 			statementInstance = crudOperation.getStatementClass().newInstance();
 
-			Matcher matcher = Pattern.compile("keyword#[A-Za-z]+|delimiter#[/[/(,.;)/]]+|<[A-Za-z.]>+").matcher(value);
+			Matcher matcher = Pattern.compile(SyntaxUtilConstants.RegexConstants.OPERATION_PATTERN + "|" + SyntaxUtilConstants.RegexConstants.KEYWORD_PATTERN + "|" + SyntaxUtilConstants.RegexConstants.DELIMITER_PATTERN + "|" + SyntaxUtilConstants.RegexConstants.DYNAMIC_VALUE_PATTERN + "|" + SyntaxUtilConstants.RegexConstants.CLAUSE_PATTERN + "|" + SyntaxUtilConstants.RegexConstants.PLAIN_TEXT_PATTERN).matcher(value);
 			while(matcher.find()) {
 				String retVal = matcher.group();
-				if(retVal.contains("keyword#[A-Za-z]+")) {
+				if(retVal.matches(SyntaxUtilConstants.RegexConstants.KEYWORD_PATTERN)) {
 					CrudKeyword crudKeyword = CrudKeyword.findMatchingKeyword(retVal);
 					statementInstance.addKeyword(crudKeyword);
 
 				}
-				else if(retVal.contains("delimiter#[/[/(,.;)/]]+")) {
+				else if(retVal.matches(SyntaxUtilConstants.RegexConstants.DELIMITER_PATTERN)) {
 					CrudDelimiter crudDelimiter = CrudDelimiter.findMatchingDelimiter(retVal);
 					statementInstance.addDelimiter(crudDelimiter);
 				}
-				else if(retVal.contains("<[A-Za-z.]>+")) {
+				else if(retVal.matches(SyntaxUtilConstants.RegexConstants.DYNAMIC_VALUE_PATTERN)) {
 					CrudDynamicValue crudDynamicValue = new CrudDynamicValue();
 					CrudDynamicValueKey crudDynamicValueKey = CrudDynamicValueKey.findFirstMatchingDynamicValueKey(retVal);
 					crudDynamicValue.setCrudDynamicValueKey(crudDynamicValueKey);
-					if(retVal.contains(CrudDynamicValueKey.ALLOWS_MULTIPLES.getCrudDynamicValueKey())) {
+					if(retVal.contains(CrudDynamicValueKey.ALLOWS_MULTIPLES.getDynamicValueKey())) {
 						crudDynamicValue.setAllowsMultiples(true);
 					}
 
 					statementInstance.addDynamicValue(crudDynamicValue);
 				}
-				else {
+				else if(retVal.matches(SyntaxUtilConstants.RegexConstants.CLAUSE_PATTERN)) {
+					CrudClause crudClause = CrudClause.findFirstMatchingClause(retVal);
+					statementInstance.addClause(crudClause);
+
+				}
+				else if(retVal.matches(SyntaxUtilConstants.RegexConstants.PLAIN_TEXT_PATTERN)) {
 					statementInstance.addPlainText(retVal);
 				}
-
 			}
-			statementInstance.setStatementSyntax(value);
+			statementInstance.constructStatementTemplate();
 		}
 		catch(InstantiationException | IllegalAccessException e) {
 			// TODO Log failure and do not throw exception

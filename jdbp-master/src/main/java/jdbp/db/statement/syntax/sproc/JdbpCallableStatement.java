@@ -1,21 +1,22 @@
 /**
  * 
  */
-package jdbp.db.statement;
+package jdbp.db.statement.syntax.sproc;
 
-import jdbp.db.statement.StatementManager.CrudOperation;
+import jdbp.db.statement.syntax.crud.CrudOperation;
 
 /**
  * @author andrew.leach
  */
-public class JdbpStatement extends AbstractStatement {
+public class JdbpCallableStatement extends AbstractCallableStatement {
+	private static final long serialVersionUID = 6078632163625536641L;
 	private CrudOperation crudOperation;
 	private String schemaName;
 	private String tableName;
 	private String typedCallableStatement;
 	private String rawCallableStatement;
 
-	public JdbpStatement() {}
+	public JdbpCallableStatement() {}
 
 	public void setSchemaName(String schemaName) {
 		this.schemaName = schemaName;

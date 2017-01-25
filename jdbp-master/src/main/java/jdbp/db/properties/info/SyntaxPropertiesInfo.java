@@ -1,7 +1,7 @@
 package jdbp.db.properties.info;
 
-import jdbp.db.statement.StatementManager.CrudOperation;
-import jdbp.db.statement.SyntacticStatement;
+import jdbp.db.statement.syntax.crud.CrudOperation;
+import jdbp.db.statement.syntax.crud.SyntacticStatement;
 
 public class SyntaxPropertiesInfo {
 

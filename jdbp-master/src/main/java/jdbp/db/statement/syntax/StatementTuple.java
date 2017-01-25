@@ -1,4 +1,4 @@
-package jdbp.db.statement;
+package jdbp.db.statement.syntax;
 
 public class StatementTuple<K, V> {
 

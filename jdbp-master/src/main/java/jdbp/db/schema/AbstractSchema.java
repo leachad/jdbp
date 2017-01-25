@@ -9,10 +9,10 @@ import java.util.List;
 
 import jdbp.db.connection.ConnectionManager;
 import jdbp.db.model.DBInfo;
-import jdbp.db.statement.JdbpStatement;
-import jdbp.db.statement.StatementManager.CrudOperation;
+import jdbp.db.statement.syntax.crud.CrudOperation;
+import jdbp.db.statement.syntax.sproc.JdbpCallableStatement;
 import jdbp.exception.JdbpException;
-import jdbp.parser.DbInfoTransposer;
+import jdbp.parser.DBInfoTransposer;
 import jdbp.parser.ResultSetTransposer;
 
 /**
@@ -76,13 +76,13 @@ public abstract class AbstractSchema extends ConnectionManager {
 	 * @return
 	 * @throws JdbpException
 	 */
-	protected boolean executeRawQueryUpdate(String dataSourceName, CrudOperation crudOperation, String destinationTable, List<Class<? extends DBInfo>> infosToUpdate) throws JdbpException {
+	protected boolean executeRawQueryUpdate(String dataSourceName, CrudOperation crudOperation, String destinationTable, List<DBInfo> infosToUpdate) throws JdbpException {
 		boolean isSuccess = false;
 		if(dataSourceName != null) {
 			Connection pooledConnection = getConnection(dataSourceName);
 			PreparedStatement rawStatement = null;
 			try {
-				String infosStringToUpdateUnsanitized = DbInfoTransposer.convertDbInfosToSQLString(dataSourceName, destinationTable, crudOperation, infosToUpdate);
+				String infosStringToUpdateUnsanitized = DBInfoTransposer.convertDbInfosToSQLString(dataSourceName, destinationTable, crudOperation, infosToUpdate);
 				rawStatement = pooledConnection.prepareStatement(infosStringToUpdateUnsanitized);
 				int result = rawStatement.executeUpdate();
 				isSuccess = result == 1 ? true : false;
@@ -92,7 +92,9 @@ public abstract class AbstractSchema extends ConnectionManager {
 			}
 			catch(SQLException e) {
 				try {
-					pooledConnection.rollback();
+					if(!pooledConnection.getAutoCommit()) {
+						pooledConnection.rollback();
+					}
 				}
 				catch(SQLException eE) {
 					JdbpException.throwException(eE);
@@ -121,7 +123,7 @@ public abstract class AbstractSchema extends ConnectionManager {
 	 * @return
 	 * @throws JdbpException
 	 */
-	protected List<DBInfo> executeCallableStatement(String dataSourceName, JdbpStatement procedureInfo, Class<? extends DBInfo> containerClass) throws JdbpException {
+	protected List<DBInfo> executeCallableStatement(String dataSourceName, JdbpCallableStatement procedureInfo, Class<? extends DBInfo> containerClass) throws JdbpException {
 		List<DBInfo> dbInfos = null;
 
 		if(dataSourceName != null) {
@@ -195,8 +197,8 @@ public abstract class AbstractSchema extends ConnectionManager {
 	 * @param statementName
 	 * @return statementInfo for processing callable statement TODO Continue improving on this method
 	 */
-	protected JdbpStatement prepareStatementInfo(String statementName) {
-		JdbpStatement statementInfo = new JdbpStatement();
+	protected JdbpCallableStatement prepareStatementInfo(String statementName) {
+		JdbpCallableStatement statementInfo = new JdbpCallableStatement();
 		statementInfo.setRawCallableStatement(statementName);
 		return statementInfo;
 
