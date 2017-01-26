@@ -51,7 +51,7 @@ public class ConversionUtil {
 		for(int i = 0; i < fields.length; i++) {
 			Field current = fields[i];
 			current.setAccessible(true);
-			if(current.isAnnotationPresent(SQLTable.class)) {
+			if(current.isAnnotationPresent(SQLTable.class) && current.getAnnotation(SQLTable.class).hasPrimaryKey() && !current.getAnnotation(SQLTable.class).primaryKeyColumn().equals(current.getName())) {
 				try {
 					if(current.getType().isPrimitive()) {
 						csvString.append(current.get(dbInfo));
