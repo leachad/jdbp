@@ -2,6 +2,9 @@ package jdbp.db.statement.syntax;
 
 public class SyntaxUtilConstants {
 	public static final char UNDERSCORE = '_';
+	public static final String DOUBLE_QUOTED_SINGLE_QUOTE = "'";
+	public static final char COMMA = ',';
+	public static final String NO_SPACE = "";
 
 	public static final class RegexConstants {
 		public static final String OPERATION_PATTERN = "operation#[A-Za-z]+";

@@ -3,11 +3,14 @@
  */
 package jdbp.db.statement;
 
+import jdbp.db.properties.util.DriverUtil;
 import jdbp.db.properties.util.SyntaxUtil;
 import jdbp.db.schema.SchemaManager;
+import jdbp.db.statement.syntax.crud.CrudClause;
 import jdbp.db.statement.syntax.crud.CrudDelimiter;
 import jdbp.db.statement.syntax.crud.CrudDynamicValueKey;
 import jdbp.db.statement.syntax.crud.InsertStatement;
+import jdbp.db.statement.syntax.crud.SelectStatement;
 
 /**
  * @author andrew.leach
@@ -24,18 +27,52 @@ public class CrudStatementManager {
 		String requestedDriverName = SchemaManager.getRequestedDriverName();
 		InsertStatement insertStatement = SyntaxUtil.getSyntacticInsertStatement(requestedDriverName);
 		String insertStatementTemplate = insertStatement.getStatementTemplate();
-		CrudDelimiter crudDelimiter = CrudDelimiter.COMMA;
 		insertStatementTemplate = insertStatementTemplate.replaceFirst(CrudDynamicValueKey.SCHEMA_NAME.getDynamicValueKey(), schemaName);
 		insertStatementTemplate = insertStatementTemplate.replaceFirst(CrudDynamicValueKey.TABLE_NAME.getDynamicValueKey(), destinationTable);
 
 		if(insertStatementTemplate.contains(CrudDynamicValueKey.COLUMN_NAME.getDynamicValueKey() + CrudDynamicValueKey.ALLOWS_MULTIPLES.getDynamicValueKey())) {
-			insertStatementTemplate = insertStatementTemplate.replaceFirst(CrudDynamicValueKey.COLUMN_NAME.getDynamicValueKey() + CrudDynamicValueKey.ALLOWS_MULTIPLES.getDynamicValueKey() + crudDelimiter.getDelimiter(), columnValuesToUpdate);
+			insertStatementTemplate = insertStatementTemplate.replaceFirst(CrudDynamicValueKey.COLUMN_NAME.getDynamicValueKey() + CrudDynamicValueKey.ALLOWS_MULTIPLES.getDynamicValueKey() + CrudDelimiter.COMMA.getDelimiter(), columnValuesToUpdate);
 		}
 
 		if(insertStatementTemplate.contains(CrudDynamicValueKey.COLUMN_VALUE.getDynamicValueKey() + CrudDynamicValueKey.ALLOWS_MULTIPLES.getDynamicValueKey())) {
-			insertStatementTemplate = insertStatementTemplate.replaceFirst(CrudDelimiter.LEFT_PAREN.getEscapedDelimiter() + CrudDynamicValueKey.COLUMN_VALUE.getDynamicValueKey() + CrudDynamicValueKey.ALLOWS_MULTIPLES.getDynamicValueKey() + crudDelimiter.getDelimiter() + CrudDelimiter.RIGHT_PAREN.getEscapedDelimiter(), valueTuplesToInsert);
+			insertStatementTemplate = insertStatementTemplate.replaceFirst(CrudDelimiter.LEFT_PAREN.getEscapedDelimiter() + CrudDynamicValueKey.COLUMN_VALUE.getDynamicValueKey() + CrudDynamicValueKey.ALLOWS_MULTIPLES.getDynamicValueKey() + CrudDelimiter.COMMA.getDelimiter() + CrudDelimiter.RIGHT_PAREN.getEscapedDelimiter(), valueTuplesToInsert);
 		}
 		return insertStatementTemplate;
+	}
+
+	public static String buildSelectSQLStatement(String schemaName, String destinationTable, String columnValuesToUpdate, String clauseToRestrictResults) {
+		String requestedDriverName = SchemaManager.getRequestedDriverName();
+		SelectStatement selectStatement = SyntaxUtil.getSyntacticSelectStatement(requestedDriverName);
+		String selectStatementTemplate = selectStatement.getStatementTemplate();
+
+		selectStatementTemplate = selectStatementTemplate.replaceFirst(CrudDynamicValueKey.SCHEMA_NAME.getDynamicValueKey(), schemaName);
+		selectStatementTemplate = selectStatementTemplate.replaceFirst(CrudDynamicValueKey.TABLE_NAME.getDynamicValueKey(), destinationTable);
+
+		if(selectStatementTemplate.contains(CrudDynamicValueKey.COLUMN_NAME.getDynamicValueKey() + CrudDynamicValueKey.ALLOWS_MULTIPLES.getDynamicValueKey())) {
+			selectStatementTemplate = selectStatementTemplate.replaceFirst(CrudDynamicValueKey.COLUMN_NAME.getDynamicValueKey() + CrudDynamicValueKey.ALLOWS_MULTIPLES.getDynamicValueKey() + CrudDelimiter.COMMA.getDelimiter(), columnValuesToUpdate);
+		}
+
+		String keyValueSubstring = CrudDynamicValueKey.CLAUSE_KEY_VALUE.getDynamicValueKey() + CrudDynamicValueKey.ALLOWS_MULTIPLES.getDynamicValueKey() + " " + CrudClause.AND.getClause();
+		if(selectStatementTemplate.contains(keyValueSubstring)) {
+			selectStatementTemplate = selectStatementTemplate.replaceFirst(keyValueSubstring, clauseToRestrictResults);
+			if(clauseToRestrictResults.length() == 0) {
+				selectStatementTemplate = selectStatementTemplate.replaceFirst(CrudClause.WHERE.getClause(), "");
+			}
+		}
+
+		// if offset is undefined, remove it
+		String offSetSubstring = CrudClause.OFFSET.getClause() + " " + CrudDynamicValueKey.CLAUSE_VALUE;
+		if(selectStatementTemplate.contains(offSetSubstring)) {
+			selectStatementTemplate = selectStatementTemplate.replaceAll(offSetSubstring, "");
+		}
+
+		// if limit is undefined, insert the default value from DriverUtil
+		String limitSubstring = CrudClause.LIMIT.getClause() + " " + CrudDynamicValueKey.CLAUSE_VALUE;
+		if(selectStatementTemplate.contains(limitSubstring)) {
+			selectStatementTemplate = selectStatementTemplate.replaceAll(limitSubstring, CrudClause.LIMIT.getClause() + " " + DriverUtil.getDefaultLimit(requestedDriverName));
+		}
+
+		return selectStatementTemplate;
 	}
 
 }

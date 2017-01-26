@@ -59,6 +59,7 @@ public class SelectStatement implements SyntacticStatement {
 		for(int i = 0; i < currentTupleIndex; i++) {
 			if(crudKeywords.peekFirst() != null && crudKeywords.peekFirst().getStatementKey().equals(i)) {
 				String retVal = crudKeywords.removeFirst().getStatementValue().getKeyword().trim();
+				stringBuilder.append(WHITESPACE_CHAR);
 				stringBuilder.append(retVal);
 				stringBuilder.append(WHITESPACE_CHAR);
 			}
@@ -80,6 +81,7 @@ public class SelectStatement implements SyntacticStatement {
 			}
 			else if(crudClauses.peekFirst() != null && crudClauses.peekFirst().getStatementKey().equals(i)) {
 				CrudClause crudClause = crudClauses.removeFirst().getStatementValue();
+				stringBuilder.append(WHITESPACE_CHAR);
 				stringBuilder.append(crudClause.getClause());
 				stringBuilder.append(WHITESPACE_CHAR);
 			}

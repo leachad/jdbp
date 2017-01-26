@@ -66,6 +66,10 @@ public class DriverUtil implements PropertySetUtility {
 		return driverUtilProperties.get(requestedDriverName).isSupportsReplication();
 	}
 
+	public static int getDefaultLimit(String requestedDriverName) {
+		return driverUtilProperties.get(requestedDriverName).getDefaultLimit();
+	}
+
 	private static DriverPropertiesInfo buildPropertiesInfo(String utilPropsForDriver) {
 		DriverPropertiesInfo propsInfo = new DriverPropertiesInfo();
 		String[] valueSubList = utilPropsForDriver.split("[;]");
@@ -85,6 +89,9 @@ public class DriverUtil implements PropertySetUtility {
 				else if(fieldName.equals(PropertyAccessConstants.LOAD_BALANCING_LABEL)) {
 					propsInfo.setLoadBalancedLabel(subKeyValue[1]);
 				}
+				else if(fieldName.equals(PropertyAccessConstants.DEFAULT_LIMIT)) {
+					propsInfo.setDefaultLimit(Integer.parseInt(subKeyValue[1]));
+				}
 			}
 		}
 		return propsInfo;
@@ -95,5 +102,6 @@ public class DriverUtil implements PropertySetUtility {
 		public static final String SUPPORTS_LOAD_BALANCING = "supportsLoadBalancing";
 		public static final String SUPPORTS_REPLICATION = "supportsReplication";
 		public static final String LOAD_BALANCING_LABEL = "loadBalancingLabel";
+		public static final String DEFAULT_LIMIT = "defaultLimit";
 	}
 }

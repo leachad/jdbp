@@ -54,13 +54,24 @@ public class JdbpSchema extends AbstractSchema {
 
 	/**
 	 * @param destinationTableName
-	 * @param crudOperation
-	 * @param infosToUpdate
+	 * @param clause
+	 *        (Must be a commaSeparatedString with tuples defined like id=1,name=someName,etc...)
+	 * @param containerClass
 	 * @return
 	 * @throws JdbpException
 	 */
-	public boolean executeInsert(String destinationTableName, List<DBInfo> infosToUpdate) throws JdbpException {
-		return executeRawQueryUpdate(schemaName, CrudOperation.INSERT, destinationTableName, infosToUpdate);
+	public List<DBInfo> executeSelect(String destinationTableName, String clause, Class<? extends DBInfo> containerClass) throws JdbpException {
+		return executePreparedQuery(schemaName, CrudOperation.SELECT, destinationTableName, clause, containerClass);
+	}
+
+	/**
+	 * @param destinationTableName
+	 * @param infosToInsert
+	 * @return isSuccess
+	 * @throws JdbpException
+	 */
+	public boolean executeInsert(String destinationTableName, List<DBInfo> infosToInsert) throws JdbpException {
+		return executePreparedUpdate(schemaName, CrudOperation.INSERT, destinationTableName, infosToInsert);
 	}
 
 	/**
@@ -70,7 +81,7 @@ public class JdbpSchema extends AbstractSchema {
 	 * @throws JdbpException
 	 */
 	public boolean executeUpdate(String destinationTableName, List<DBInfo> infosToUpdate) throws JdbpException {
-		return executeRawQueryUpdate(schemaName, CrudOperation.UPDATE, destinationTableName, infosToUpdate);
+		return executePreparedUpdate(schemaName, CrudOperation.UPDATE, destinationTableName, infosToUpdate);
 	}
 
 	/**
@@ -80,7 +91,7 @@ public class JdbpSchema extends AbstractSchema {
 	 * @throws JdbpException
 	 */
 	public boolean executeDelete(String destinationTableName, List<DBInfo> infosToUpdate) throws JdbpException {
-		return executeRawQueryUpdate(schemaName, CrudOperation.DELETE, destinationTableName, infosToUpdate);
+		return executePreparedUpdate(schemaName, CrudOperation.DELETE, destinationTableName, infosToUpdate);
 	}
 
 	/**

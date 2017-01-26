@@ -13,6 +13,7 @@ public class DriverPropertiesInfo implements Serializable {
 	private String loadBalancedLabel;
 	private boolean supportsLoadBalancing;
 	private boolean supportsReplication;
+	private int defaultLimit;
 
 	public String getDriverClassLabel() {
 		return driverClassLabel;
@@ -44,6 +45,14 @@ public class DriverPropertiesInfo implements Serializable {
 
 	public void setSupportsReplication(boolean supportsReplication) {
 		this.supportsReplication = supportsReplication;
+	}
+
+	public int getDefaultLimit() {
+		return defaultLimit;
+	}
+
+	public void setDefaultLimit(int defaultLimit) {
+		this.defaultLimit = defaultLimit;
 	}
 
 }
