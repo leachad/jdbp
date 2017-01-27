@@ -1,7 +1,8 @@
 #jdbp
+**Java Database Parser**
+JavaUtility for rapid database layer prototyping built for any Java application. Implements connection pooling with HikariCP project and targets JDBC Type 4 drivers. Goal of the project was to reduce the amount of code required to integrate JDBC with existing data stores
 
-**_[NOTE] Currently Tested JDBC Drivers_**
-
+**Currently Tested JDBC Type 4 Drivers**
 1. mysql
 
 ### Build
@@ -19,19 +20,14 @@ There is no build required to use jdbp. Simply edit the jdbp.properties file bas
   * Example: password=poorlyObfuscatedPassword
 
 ### Getting Started
-In your project, the only line required to start the dynamic lookup is:
+In your project, the only line required to start the dynamic driver location and ResourceBundle parsing is:
 ```java
   Jdbp.initialize();
 ```
 
-To get a connection from the connection pool:
+To get a reference to a JdbpSchema
 ```java
   String schemaName = "some_db_name";
-  javax.sql.Connection connection = Jdbp.getConnection(schemaName);
-```
-
-...and to release the same Connection implemention:
-```java
-  Jdbp.releaseConnection(connection, schemaName);
+  JdbpSchema schema = SchemaManager.getSchema(schemaName);
 ```
 More features will follow. Stay posted!
