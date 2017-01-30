@@ -35,8 +35,8 @@ To get a reference to a JdbpSchema
 For each table in each Schema you plan to use in the database layer tier of your application, it is required that you define a Java object that extends ```java jdbp.db.model.DBInfo```. This hierarchy achieves 2 important goals:
 1. The ResultSet returned from standard JDBC operations can be converted into a useful Java object using the class definition of the DBInfo instance to determine field names and types.
 2. With the addition of the ```java @SQLTable``` annotation (defined below) the conversion of a Java object to SQL Syntax is performed 'under the covers'
-    ### @SQLTable Annotation
-    @SQLTable(hasPrimaryKey = boolean, primaryKeyColumn = "primarykeyColumnName", isQueryable = boolean, isInsertable = true)
+  
+    ```java @SQLTable(hasPrimaryKey = boolean, primaryKeyColumn = "primarykeyColumnName", isQueryable = boolean, isInsertable = true)```
     
 ### Basic SQL Operations
 With a reference to the ```java JdbpSchema``` object you can invoke
