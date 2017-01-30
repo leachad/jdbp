@@ -31,10 +31,17 @@ To get a reference to a JdbpSchema
   JdbpSchema schema = SchemaManager.getSchema(schemaName);
 ```
 
+### Defining your Data Access Objects
+For each table in each Schema you plan to use in the database layer tier of your application, it is required that you define a Java object that extends ```java jdbp.db.model.DBInfo```. This hierarchy achieves 2 important goals:
+1. The ResultSet returned from standard JDBC operations can be converted into a useful Java object using the class definition of the DBInfo instance to determine field names and types.
+2. With the addition of the ```java @SQLTable``` annotation (defined below) the conversion of a Java object to SQL Syntax is performed 'under the covers'
+    ### @SQLTable Annotation
+    @SQLTable(hasPrimaryKey = boolean, primaryKeyColumn = "primarykeyColumnName", isQueryable = boolean, isInsertable = true)
+    
 ### Basic SQL Operations
-With a reference to the JdbpSchema object you can invoke
+With a reference to the ```java JdbpSchema``` object you can invoke
 ```java
-  List<DBInfo> resultSetTransposedToContainerClass = schema.executeRawQueryStatement(schemaName, "SELECT * FROM SomeTable WHERE SomeKey = 'SomeVal', SomeDBInfo.class);
+  List<DBInfo> resultSetTransposedToContainerClass = schema.executeRawQueryStatement(schemaName, "SELECT * FROM SomeTable WHERE SomeKey = 'SomeVal'", SomeDBInfo.class);
 ```
-If your application defines a Data Access Object that extends from ```java jdbp.db.model.DBInfo``` then the List of DBInfo will contain a mirror of each row returned in the initial resultSet from the raw query statement passed as a parameter.
+As noted, ```java Jdbp``` requires all Data Access Objects to extend from ```java jdbp.db.model.DBInfo```. This guarantee allows a statement executed upon a ```java JdbpSchema``` object to return a list of objects containing instances of ```java jdbp.db.model.DBInfo``` the abstract Supertype.
 More features will follow. Stay posted!
