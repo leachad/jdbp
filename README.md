@@ -54,9 +54,11 @@ Prepared Update (INSERT)
   boolean isSuccess = schema.executeInsert("SomeTable", List<DBInfo> infoObjectsToInsert);
 ```
 Callable Statement
+
 ***```JdbpSchema.executeStoredProcedure()``` is not fully operational, and should not yet be utilized***
 
 As noted, ```Jdbp``` requires all Data Access Objects to extend from ```jdbp.db.model.DBInfo```. This guarantee allows a statement executed upon a ```JdbpSchema``` object to return a list of objects containing instances of ```jdbp.db.model.DBInfo``` the abstract Supertype.
 
 Similary, for any update operation that requires some sequence of values, the guarantee of the DAO descending from the abstract supertype, allows Jdbp to work behind the scenes on converted all camelcase field names to their equivalency in SQL Syntax (ex: 'fieldName' to 'field_name') and retrieve the values contained in each object instance using reflection the conditions defined by the ```@SQLTable``` annotation.
+
 More features will follow. Stay posted!
