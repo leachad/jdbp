@@ -3,9 +3,9 @@
  */
 package jdbp.db.statement;
 
+import jdbp.db.driver.DriverStorage;
 import jdbp.db.properties.util.DriverUtil;
 import jdbp.db.properties.util.SyntaxUtil;
-import jdbp.db.schema.SchemaManager;
 import jdbp.db.statement.syntax.crud.CrudClause;
 import jdbp.db.statement.syntax.crud.CrudDelimiter;
 import jdbp.db.statement.syntax.crud.CrudDynamicValueKey;
@@ -24,7 +24,7 @@ public class CrudStatementManager {
 	 * @return
 	 */
 	public static String buildInsertSQLStatement(String schemaName, String destinationTable, String columnValuesToUpdate, String valueTuplesToInsert) {
-		String requestedDriverName = SchemaManager.getRequestedDriverName();
+		String requestedDriverName = DriverStorage.getRequestedDriverName();
 		InsertStatement insertStatement = SyntaxUtil.getSyntacticInsertStatement(requestedDriverName);
 		String insertStatementTemplate = insertStatement.getStatementTemplate();
 		insertStatementTemplate = insertStatementTemplate.replaceFirst(CrudDynamicValueKey.SCHEMA_NAME.getDynamicValueKey(), schemaName);
@@ -41,7 +41,7 @@ public class CrudStatementManager {
 	}
 
 	public static String buildSelectSQLStatement(String schemaName, String destinationTable, String columnValuesToUpdate, String clauseToRestrictResults) {
-		String requestedDriverName = SchemaManager.getRequestedDriverName();
+		String requestedDriverName = DriverStorage.getRequestedDriverName();
 		SelectStatement selectStatement = SyntaxUtil.getSyntacticSelectStatement(requestedDriverName);
 		String selectStatementTemplate = selectStatement.getStatementTemplate();
 

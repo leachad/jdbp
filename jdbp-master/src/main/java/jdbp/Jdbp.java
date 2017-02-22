@@ -1,14 +1,9 @@
 /**
  * 
  */
-package jdbp.main;
+package jdbp;
 
-import java.util.List;
-
-import jdbp.db.driver.DriverLocator;
-import jdbp.db.properties.PropertySetManager;
 import jdbp.db.schema.JdbpSchema;
-import jdbp.db.schema.SchemaManager;
 import jdbp.exception.JdbpException;
 
 /**
@@ -19,8 +14,8 @@ import jdbp.exception.JdbpException;
  */
 public class Jdbp {
 
-	private Jdbp() {
-		// private constructor to hide default public constructor
+	public Jdbp() {
+		throw new UnsupportedOperationException();
 	}
 
 	/**
@@ -40,10 +35,7 @@ public class Jdbp {
 	 * @throws JdbpException
 	 */
 	public static void destroy() throws JdbpException {
-		List<JdbpSchema> schemaContainers = SchemaManager.getAvailableSchemas();
-		for(JdbpSchema schemaContainer: schemaContainers) {
-			schemaContainer.closeDataSource();
-		}
+		SchemaManager.closeAllDataSources();
 	}
 
 	/**

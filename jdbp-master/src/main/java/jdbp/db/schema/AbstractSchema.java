@@ -8,6 +8,7 @@ import java.sql.Statement;
 import java.util.List;
 
 import jdbp.db.connection.ConnectionManager;
+import jdbp.db.connection.ConnectionManagerProperties;
 import jdbp.db.model.DBInfo;
 import jdbp.db.statement.syntax.crud.CrudOperation;
 import jdbp.db.statement.syntax.sproc.JdbpCallableStatement;
@@ -21,6 +22,13 @@ import jdbp.parser.ResultSetTransposer;
  */
 public abstract class AbstractSchema extends ConnectionManager {
 
+	private String schemaName;
+
+	protected AbstractSchema(String schemaName, ConnectionManagerProperties connectionManagerProperties) {
+		super(connectionManagerProperties);
+		this.schemaName = schemaName;
+	}
+
 	/**
 	 * @param dataSourceName
 	 * @param rawQueryString
@@ -28,44 +36,45 @@ public abstract class AbstractSchema extends ConnectionManager {
 	 * @return
 	 * @throws JdbpException
 	 */
-	protected List<DBInfo> executeRawQueryStatement(String dataSourceName, String rawQueryString, Class<? extends DBInfo> containerClass) throws JdbpException {
+	protected List<DBInfo> executeRawQueryStatement(String rawQueryString, Class<? extends DBInfo> containerClass) throws JdbpException {
 		List<DBInfo> dbInfos = null;
 
-		if(dataSourceName != null) {
-			ResultSet resultSet = null;
-			Connection pooledConnection = getConnection(dataSourceName);
-			Statement rawStatement = null;
+		ResultSet resultSet = null;
+		Connection pooledConnection = getConnection();
+		Statement rawStatement = null;
+		try {
+			rawStatement = pooledConnection.createStatement();
+			resultSet = rawStatement.executeQuery(rawQueryString);
+			dbInfos = ResultSetTransposer.transposeResultSet(resultSet, containerClass);
+			if(!pooledConnection.getAutoCommit()) {
+				pooledConnection.commit();
+			}
+		}
+		catch(SQLException e) {
 			try {
-				rawStatement = pooledConnection.createStatement();
-				resultSet = rawStatement.executeQuery(rawQueryString);
-				dbInfos = ResultSetTransposer.transposeResultSet(resultSet, containerClass);
 				if(!pooledConnection.getAutoCommit()) {
-					pooledConnection.commit();
+					pooledConnection.rollback();
+				}
+			}
+			catch(SQLException eE) {
+				JdbpException.throwException(eE);
+			}
+			JdbpException.throwException(e);
+		}
+		finally {
+			try {
+				if(rawStatement != null) {
+					rawStatement.close();
+				}
+				if(resultSet != null) {
+					resultSet.close();
+				}
+				if(pooledConnection != null) {
+					pooledConnection.close();
 				}
 			}
 			catch(SQLException e) {
-				try {
-					if(!pooledConnection.getAutoCommit()) {
-						pooledConnection.rollback();
-					}
-				}
-				catch(SQLException eE) {
-					JdbpException.throwException(eE);
-				}
 				JdbpException.throwException(e);
-			}
-			finally {
-				try {
-					if(rawStatement != null) {
-						rawStatement.close();
-					}
-					if(resultSet != null) {
-						resultSet.close();
-					}
-				}
-				catch(SQLException e) {
-					JdbpException.throwException(e);
-				}
 			}
 		}
 		return dbInfos;
@@ -78,43 +87,42 @@ public abstract class AbstractSchema extends ConnectionManager {
 	 * @return
 	 * @throws JdbpException
 	 */
-	protected boolean executePreparedUpdate(String dataSourceName, CrudOperation crudOperation, String destinationTable, List<DBInfo> infosToUpdate) throws JdbpException {
+	protected boolean executePreparedUpdate(CrudOperation crudOperation, String destinationTable, List<DBInfo> infosToUpdate) throws JdbpException {
 		boolean isSuccess = false;
-		if(dataSourceName != null) {
-			Connection pooledConnection = getConnection(dataSourceName);
-			PreparedStatement preparedUpdateStatement = null;
-			try {
-				String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLUpdateString(dataSourceName, destinationTable, crudOperation, infosToUpdate);
-				preparedUpdateStatement = pooledConnection.prepareStatement(infosStringToUpdateUnsanitized);
-				int result = preparedUpdateStatement.executeUpdate();
-				isSuccess = result == 1 ? true : false;
-				if(!pooledConnection.getAutoCommit()) {
-					pooledConnection.commit();
-				}
-			}
-			catch(SQLException e) {
-				try {
-					if(!pooledConnection.getAutoCommit()) {
-						pooledConnection.rollback();
-					}
-				}
-				catch(SQLException eE) {
-					JdbpException.throwException(eE);
-				}
-				JdbpException.throwException(e);
-			}
-			finally {
-				try {
-					if(preparedUpdateStatement != null) {
-						preparedUpdateStatement.close();
-					}
-					pooledConnection.close();
-				}
-				catch(SQLException e) {
-					JdbpException.throwException(e);
-				}
+		Connection pooledConnection = getConnection();
+		PreparedStatement preparedUpdateStatement = null;
+		try {
+			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLUpdateString(schemaName, destinationTable, crudOperation, infosToUpdate);
+			preparedUpdateStatement = pooledConnection.prepareStatement(infosStringToUpdateUnsanitized);
+			int result = preparedUpdateStatement.executeUpdate();
+			isSuccess = result == 1 ? true : false;
+			if(!pooledConnection.getAutoCommit()) {
+				pooledConnection.commit();
 			}
 		}
+		catch(SQLException e) {
+			try {
+				if(!pooledConnection.getAutoCommit()) {
+					pooledConnection.rollback();
+				}
+			}
+			catch(SQLException eE) {
+				JdbpException.throwException(eE);
+			}
+			JdbpException.throwException(e);
+		}
+		finally {
+			try {
+				if(preparedUpdateStatement != null) {
+					preparedUpdateStatement.close();
+				}
+				pooledConnection.close();
+			}
+			catch(SQLException e) {
+				JdbpException.throwException(e);
+			}
+		}
+
 		return isSuccess;
 	}
 
@@ -128,48 +136,47 @@ public abstract class AbstractSchema extends ConnectionManager {
 	 * @return
 	 * @throws JdbpException
 	 */
-	protected List<DBInfo> executePreparedQuery(String schemaName, CrudOperation crudOperation, String destinationTableName, String unsanitizedClause, Class<? extends DBInfo> containerClass) throws JdbpException {
+	protected List<DBInfo> executePreparedQuery(CrudOperation crudOperation, String destinationTableName, String unsanitizedClause, Class<? extends DBInfo> containerClass) throws JdbpException {
 		List<DBInfo> dbInfos = null;
 
-		if(schemaName != null) {
-			ResultSet resultSet = null;
-			Connection pooledConnection = getConnection(schemaName);
-			PreparedStatement preparedQueryStatement = null;
-			try {
-				String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSqlQueryString(schemaName, destinationTableName, crudOperation, unsanitizedClause, containerClass);
-				preparedQueryStatement = pooledConnection.prepareStatement(infosStringToUpdateUnsanitized);
-				resultSet = preparedQueryStatement.executeQuery();
-				dbInfos = ResultSetTransposer.transposeResultSet(resultSet, containerClass);
-				if(!pooledConnection.getAutoCommit()) {
-					pooledConnection.commit();
-				}
-			}
-			catch(SQLException e) {
-				try {
-					if(!pooledConnection.getAutoCommit()) {
-						pooledConnection.rollback();
-					}
-				}
-				catch(SQLException eE) {
-					JdbpException.throwException(eE);
-				}
-				JdbpException.throwException(e);
-			}
-			finally {
-				try {
-					if(preparedQueryStatement != null) {
-						preparedQueryStatement.close();
-					}
-					if(resultSet != null) {
-						resultSet.close();
-					}
-					pooledConnection.close();
-				}
-				catch(SQLException e) {
-					JdbpException.throwException(e);
-				}
+		ResultSet resultSet = null;
+		Connection pooledConnection = getConnection();
+		PreparedStatement preparedQueryStatement = null;
+		try {
+			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSqlQueryString(schemaName, destinationTableName, crudOperation, unsanitizedClause, containerClass);
+			preparedQueryStatement = pooledConnection.prepareStatement(infosStringToUpdateUnsanitized);
+			resultSet = preparedQueryStatement.executeQuery();
+			dbInfos = ResultSetTransposer.transposeResultSet(resultSet, containerClass);
+			if(!pooledConnection.getAutoCommit()) {
+				pooledConnection.commit();
 			}
 		}
+		catch(SQLException e) {
+			try {
+				if(!pooledConnection.getAutoCommit()) {
+					pooledConnection.rollback();
+				}
+			}
+			catch(SQLException eE) {
+				JdbpException.throwException(eE);
+			}
+			JdbpException.throwException(e);
+		}
+		finally {
+			try {
+				if(preparedQueryStatement != null) {
+					preparedQueryStatement.close();
+				}
+				if(resultSet != null) {
+					resultSet.close();
+				}
+				pooledConnection.close();
+			}
+			catch(SQLException e) {
+				JdbpException.throwException(e);
+			}
+		}
+
 		return dbInfos;
 
 	}
@@ -185,43 +192,42 @@ public abstract class AbstractSchema extends ConnectionManager {
 	protected List<DBInfo> executeCallableStatement(String dataSourceName, JdbpCallableStatement procedureInfo, Class<? extends DBInfo> containerClass) throws JdbpException {
 		List<DBInfo> dbInfos = null;
 
-		if(dataSourceName != null) {
-			ResultSet resultSet = null;
-			Connection pooledConnection = getConnection(dataSourceName);
-			PreparedStatement callableStatement = null;
+		ResultSet resultSet = null;
+		Connection pooledConnection = getConnection();
+		PreparedStatement callableStatement = null;
+		try {
+			callableStatement = pooledConnection.prepareCall(procedureInfo.getRawCallableStatement());
+			resultSet = executeCallableStatement(callableStatement);
+			dbInfos = ResultSetTransposer.transposeResultSet(resultSet, containerClass);
+			if(!pooledConnection.getAutoCommit()) {
+				pooledConnection.commit();
+			}
+		}
+		catch(SQLException e) {
 			try {
-				callableStatement = pooledConnection.prepareCall(procedureInfo.getRawCallableStatement());
-				resultSet = executeCallableStatement(callableStatement);
-				dbInfos = ResultSetTransposer.transposeResultSet(resultSet, containerClass);
-				if(!pooledConnection.getAutoCommit()) {
-					pooledConnection.commit();
+				pooledConnection.rollback();
+			}
+			catch(SQLException eE) {
+				JdbpException.throwException(eE);
+			}
+			JdbpException.throwException(e);
+		}
+		finally {
+			try {
+				if(callableStatement != null) {
+					callableStatement.close();
 				}
+				if(resultSet != null) {
+					resultSet.close();
+				}
+				pooledConnection.close();
 			}
 			catch(SQLException e) {
-				try {
-					pooledConnection.rollback();
-				}
-				catch(SQLException eE) {
-					JdbpException.throwException(eE);
-				}
 				JdbpException.throwException(e);
-			}
-			finally {
-				try {
-					if(callableStatement != null) {
-						callableStatement.close();
-					}
-					if(resultSet != null) {
-						resultSet.close();
-					}
-					pooledConnection.close();
-				}
-				catch(SQLException e) {
-					JdbpException.throwException(e);
-				}
 			}
 		}
 		return dbInfos;
+
 	}
 
 	/**

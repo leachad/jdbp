@@ -1,7 +1,7 @@
 /**
  * 
  */
-package jdbp.db.driver;
+package jdbp;
 
 import java.sql.Driver;
 import java.util.ArrayList;
@@ -11,8 +11,8 @@ import java.util.ResourceBundle;
 import java.util.ServiceLoader;
 import java.util.Set;
 
+import jdbp.db.driver.DriverStorage;
 import jdbp.db.host.HostManager;
-import jdbp.db.schema.SchemaManager;
 
 /**
  * Utility to obtain the jdbp.db.driver in the classpath, check if it is compatible against the predefined list of drivers and register it with the
@@ -21,7 +21,7 @@ import jdbp.db.schema.SchemaManager;
  * @since 12.1.2016
  * @author andrew.leach
  */
-public class DriverLocator {
+class DriverLocator {
 
 	private static final String REQUESTED_DRIVER_NAME = "requestedDriverName";
 	private static final String LOAD_BALANCED = "loadBalanced";
@@ -35,8 +35,8 @@ public class DriverLocator {
 
 	private static Driver driver = null;
 
-	private DriverLocator() {
-		// private constructor to hide the default public constructor
+	public DriverLocator() {
+		throw new UnsupportedOperationException();
 	}
 
 	/**
@@ -49,7 +49,7 @@ public class DriverLocator {
 			if(key.equals(REQUESTED_DRIVER_NAME)) {
 				String requestedDriverName = jdbpProps.getString(key);
 				driver = DriverLocator.locateDriver(requestedDriverName);
-				SchemaManager.setRequestedDriverName(requestedDriverName);
+				DriverStorage.setRequestedDriverName(requestedDriverName);
 			}
 			else if(key.equals(LOAD_BALANCED)) {
 				SchemaManager.setLoadBalanced(jdbpProps.getString(key));

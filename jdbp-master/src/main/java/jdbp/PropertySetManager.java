@@ -1,4 +1,4 @@
-package jdbp.db.properties;
+package jdbp;
 
 import jdbp.db.properties.util.DriverUtil;
 import jdbp.db.properties.util.PropertySetUtility;
@@ -9,12 +9,12 @@ import jdbp.exception.JdbpException;
  * @since 12.28.16
  * @author andrew.leach
  */
-public class PropertySetManager {
+class PropertySetManager {
 
 	private static Class<?>[] jdbpUtilityPropertySets = {DriverUtil.class, SyntaxUtil.class};
 
-	private PropertySetManager() {
-		// private constructor to avoid instantiation of the implicit constructor
+	public PropertySetManager() {
+		throw new UnsupportedOperationException();
 	}
 
 	/**

@@ -1,9 +1,11 @@
 package jdbp.db.connection;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
-import jdbp.db.schema.SchemaManager;
-import jdbp.db.schema.JdbpSchema;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
 import jdbp.exception.JdbpException;
 
 /**
@@ -14,22 +16,67 @@ import jdbp.exception.JdbpException;
  */
 public class ConnectionManager {
 
-	/**
-	 * @param schemaContainer
-	 * @return an implementation of javax.sql.Connection
-	 * @throws JdbpException
-	 */
-	public static Connection getConnection(JdbpSchema schemaContainer) throws JdbpException {
-		return schemaContainer.getConnection();
+	private ConnectionManagerProperties connectionManagerProperties;
+	private HikariDataSource hikariDataSource;
+
+	public ConnectionManager(ConnectionManagerProperties connectionManagerProperties) {
+		this.connectionManagerProperties = connectionManagerProperties;
+		initializeDataSource();
 	}
 
-	/**
-	 * @param schemaName
-	 * @return an implementation of javax.sql.Connection
-	 * @throws JdbpException
-	 */
-	public static Connection getConnection(String schemaName) throws JdbpException {
-		JdbpSchema schemaContainer = SchemaManager.getSchema(schemaName);
-		return getConnection(schemaContainer);
+	public void closeDataSource() {
+		getHikariDataSource().close();
+	}
+
+	public Connection getConnection() throws JdbpException {
+		Connection connection = null;
+		try {
+			if(isCredentialsNoProperties() && isHikariEnablesCredentials()) {
+				connection = getHikariDataSource().getConnection(getUsername(), getPassword());
+			}
+			else {
+				connection = getHikariDataSource().getConnection();
+			}
+		}
+		catch(SQLException e) {
+			JdbpException.throwException(e);
+		}
+		return connection;
+	}
+
+	public void initializeDataSource() {
+		HikariConfig config = new HikariConfig();
+		config.setJdbcUrl(getTargetUrl());
+		if(isCredentialsNoProperties()) {
+			config.setUsername(getUsername());
+			config.setPassword(getPassword());
+		}
+
+		hikariDataSource = new HikariDataSource(config);
+
+	}
+
+	private String getTargetUrl() {
+		return connectionManagerProperties.getTargetUrl();
+	}
+
+	private String getPassword() {
+		return connectionManagerProperties.getPassword();
+	}
+
+	private String getUsername() {
+		return connectionManagerProperties.getUserName();
+	}
+
+	private boolean isHikariEnablesCredentials() {
+		return connectionManagerProperties.isHikariEnablesCredentials();
+	}
+
+	private boolean isCredentialsNoProperties() {
+		return connectionManagerProperties.isCredentialsNoProperties();
+	}
+
+	private HikariDataSource getHikariDataSource() {
+		return hikariDataSource;
 	}
 }
