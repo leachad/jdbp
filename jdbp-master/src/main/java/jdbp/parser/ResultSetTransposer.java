@@ -19,8 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jdbp.db.model.DBInfo;
 import jdbp.exception.JdbpException;
+import jdbp.model.DBInfo;
 
 public class ResultSetTransposer {
 

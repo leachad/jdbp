@@ -6,11 +6,11 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 
-import jdbp.db.annotation.SQLTable;
-import jdbp.db.model.DBInfo;
-import jdbp.db.statement.syntax.SyntaxUtilConstants;
+import jdbp.annotation.SQLTable;
 import jdbp.logger.JdbpLogger;
 import jdbp.logger.JdbpLoggerConstants;
+import jdbp.model.DBInfo;
+import jdbp.statement.syntax.SyntaxUtilConstants;
 
 public class ConversionUtil {
 

@@ -6,11 +6,11 @@ package jdbp.parser;
 import java.lang.reflect.Field;
 import java.util.List;
 
-import jdbp.db.model.DBInfo;
-import jdbp.db.statement.CrudStatementManager;
-import jdbp.db.statement.syntax.crud.CrudClause;
-import jdbp.db.statement.syntax.crud.CrudDelimiter;
-import jdbp.db.statement.syntax.crud.CrudOperation;
+import jdbp.model.DBInfo;
+import jdbp.statement.CrudStatementManager;
+import jdbp.statement.syntax.crud.CrudClause;
+import jdbp.statement.syntax.crud.CrudDelimiter;
+import jdbp.statement.syntax.crud.CrudOperation;
 
 /**
  * @since 1.24.17

@@ -3,8 +3,12 @@
  */
 package jdbp;
 
-import jdbp.db.schema.JdbpSchema;
+import jdbp.driver.DriverLocator;
 import jdbp.exception.JdbpException;
+import jdbp.logger.JdbpLogger;
+import jdbp.properties.PropertySetManager;
+import jdbp.schema.JdbpSchema;
+import jdbp.schema.SchemaManager;
 
 /**
  * Main Class for the Jdbp [ <b>J</b>ava <b>D</b>ata<b>b</b>ase <b>P</b>arser ] project
@@ -13,20 +17,24 @@ import jdbp.exception.JdbpException;
  * @author andrew.leach
  */
 public class Jdbp {
+	private static Jdbp jdbp = null;
 
-	public Jdbp() {
-		throw new UnsupportedOperationException();
-	}
-
-	/**
-	 * Initializes HikariDataSource object for the properties defined in Jdbp properties
-	 * 
-	 * @throws JdbpException
-	 */
-	public static void initialize() throws JdbpException {
+	private Jdbp() throws JdbpException {
 		DriverLocator.findJdbcDriver();
 		PropertySetManager.loadAllProperties();
 		SchemaManager.createAllSchemasFromProperties();
+	}
+
+	public static Jdbp getInstance() {
+		if(jdbp == null) {
+			try {
+				jdbp = new Jdbp();
+			}
+			catch(JdbpException e) {
+				JdbpLogger.logInfo("Unable to instantiate Jdbp", e);
+			}
+		}
+		return jdbp;
 	}
 
 	/**
@@ -34,7 +42,7 @@ public class Jdbp {
 	 * 
 	 * @throws JdbpException
 	 */
-	public static void destroy() throws JdbpException {
+	public void destroy() throws JdbpException {
 		SchemaManager.closeAllDataSources();
 	}
 
@@ -43,7 +51,7 @@ public class Jdbp {
 	 * @return
 	 * @throws JdbpException
 	 */
-	public static JdbpSchema getDatabase(String schemaName) throws JdbpException {
+	public JdbpSchema getDatabase(String schemaName) throws JdbpException {
 		return SchemaManager.getSchema(schemaName);
 	}
 }
