@@ -6,11 +6,13 @@ package jdbp.parser;
 import java.lang.reflect.Field;
 import java.util.List;
 
+import jdbp.exception.JdbpException;
 import jdbp.model.DBInfo;
 import jdbp.statement.CrudStatementManager;
 import jdbp.statement.syntax.crud.CrudClause;
 import jdbp.statement.syntax.crud.CrudDelimiter;
 import jdbp.statement.syntax.crud.CrudOperation;
+import jdbp.statement.syntax.crud.CrudOperationInfo;
 
 /**
  * @since 1.24.17
@@ -20,35 +22,23 @@ public class DBInfoTransposer {
 
 	/**
 	 * Utility method to effectively do the opposite of the ResultSetTransposer when SqlQuery or SqlStatement require info objects to populate the
-	 * database. Uses the CrudStatementManager to further abstract the idea of statement creation. TODO CrudStatementManager should take two
-	 * additional params: String of columns requiring values and String of value tuples to insert, update, delete etc.
+	 * database. Uses the CrudStatementManager to further abstract the idea of statement creation.
 	 * 
 	 * @param schemaName
 	 * @param destinationTable
 	 * @param crudOperation
 	 * @param infosToConvert
 	 * @return
+	 * @throws JdbpException
 	 */
-	public static String constructSQLUpdateString(String schemaName, String destinationTable, CrudOperation crudOperation, List<DBInfo> infosToConvert) {
+	public static String constructSQLUpdateString(String schemaName, String destinationTable, CrudOperationInfo crudOperationInfo, List<DBInfo> infosToConvert) throws JdbpException {
 		String sqlString = null;
-		switch(crudOperation) {
-			case CREATE:
-				sqlString = null; // not yet supported
-				break;
-			case DELETE:
-				sqlString = null; // not yet supported
-				break;
+		switch(crudOperationInfo.getCrudOperation()) {
 			case UPDATE:
-				sqlString = null; // not yet supported
+				sqlString = buildUpdateSQLString(schemaName, destinationTable, crudOperationInfo, infosToConvert);
 				break;
 			case INSERT:
-				sqlString = buildInsertSQLString(schemaName, destinationTable, infosToConvert);
-				break;
-			case ALTER:
-				sqlString = null; // not yet supported
-				break;
-			case DROP:
-				sqlString = null; // not yet supported
+				sqlString = buildInsertSQLString(schemaName, destinationTable, crudOperationInfo, infosToConvert);
 				break;
 			default:
 				break;
@@ -57,15 +47,84 @@ public class DBInfoTransposer {
 		return sqlString;
 	}
 
-	public static String constructSqlQueryString(String schemaName, String destinationTable, CrudOperation crudOperation, String unSanitizedClause, Class<? extends DBInfo> containerClass) {
+	/**
+	 * @param schemaName
+	 * @param destinationTable
+	 * @param crudOperationInfo
+	 * @param containerClass
+	 * @return
+	 */
+	public static String constructSQLQueryString(String schemaName, String destinationTable, CrudOperationInfo crudOperationInfo, Class<? extends DBInfo> containerClass) {
 		String sqlString = null;
-		if(crudOperation.equals(CrudOperation.SELECT)) {
-			sqlString = buildSelectSQLString(schemaName, destinationTable, unSanitizedClause, containerClass);
+		if(crudOperationInfo.getCrudOperation().equals(CrudOperation.SELECT)) {
+			sqlString = buildSelectSQLString(schemaName, destinationTable, crudOperationInfo, containerClass);
 		}
 		return sqlString;
 	}
 
-	private static String buildSelectSQLString(String schemaName, String destinationTable, String unSanitizedClause, Class<? extends DBInfo> containerClass) {
+	private static String buildUpdateSQLString(String schemaName, String destinationTable, CrudOperationInfo crudOperationInfo, List<DBInfo> infosToConvert) {
+		CrudDelimiter sequenceDelimiter = CrudDelimiter.COMMA;
+
+		DBInfo infoToConvert = infosToConvert.get(0);
+		Field[] fieldsToConvert = infoToConvert.getClass().getDeclaredFields();
+		List<String> convertedFieldNames = ConversionUtil.convertCamelCaseAttributesToSql(fieldsToConvert);
+		StringBuilder columnNamesToReplaceInTemplate = new StringBuilder();
+		for(int i = 0; i < convertedFieldNames.size(); i++) {
+			String nextColumn = convertedFieldNames.get(i);
+			if(!nextColumn.equals("id")) {
+				columnNamesToReplaceInTemplate.append(nextColumn);
+				if(i < convertedFieldNames.size() - 1) {
+					columnNamesToReplaceInTemplate.append(sequenceDelimiter.getDelimiter());
+				}
+			}
+		}
+
+		StringBuilder columnValuesToReplaceInTemplate = new StringBuilder();
+		columnValuesToReplaceInTemplate.append(CrudDelimiter.LEFT_PAREN.getDelimiter());
+		String commaSepColumnValues = ConversionUtil.toCommaSeparatedString(infoToConvert);
+		columnValuesToReplaceInTemplate.append(commaSepColumnValues);
+		columnValuesToReplaceInTemplate.append(CrudDelimiter.RIGHT_PAREN.getDelimiter());
+
+		StringBuilder clauseForUpdateStatement = new StringBuilder();
+
+		// TODO Factor in clause creation logic
+		return CrudStatementManager.buildUpdateSQLStatement(schemaName, destinationTable, columnNamesToReplaceInTemplate.toString(), columnValuesToReplaceInTemplate.toString(), clauseForUpdateStatement.toString());
+	}
+
+	private static String buildInsertSQLString(String schemaName, String destinationTable, CrudOperationInfo crudOperationInfo, List<DBInfo> infosToConvert) {
+		CrudDelimiter sequenceDelimiter = CrudDelimiter.COMMA;
+
+		DBInfo infoToConvert = infosToConvert.get(0);
+		Field[] fieldsToConvert = infoToConvert.getClass().getDeclaredFields();
+		List<String> convertedFieldNames = ConversionUtil.convertCamelCaseAttributesToSql(fieldsToConvert);
+		StringBuilder columnNamesToReplaceInTemplate = new StringBuilder();
+		for(int i = 0; i < convertedFieldNames.size(); i++) {
+			String nextColumn = convertedFieldNames.get(i);
+			if(!nextColumn.equals("id")) {
+				columnNamesToReplaceInTemplate.append(nextColumn);
+				if(i < convertedFieldNames.size() - 1) {
+					columnNamesToReplaceInTemplate.append(sequenceDelimiter.getDelimiter());
+				}
+			}
+		}
+
+		StringBuilder columnValuesToReplaceInTemplate = new StringBuilder();
+		for(int i = 0; i < infosToConvert.size(); i++) {
+			columnValuesToReplaceInTemplate.append(CrudDelimiter.LEFT_PAREN.getDelimiter());
+			String commaSepColumnValues = ConversionUtil.toCommaSeparatedString(infosToConvert.get(i));
+			columnValuesToReplaceInTemplate.append(commaSepColumnValues);
+
+			columnValuesToReplaceInTemplate.append(CrudDelimiter.RIGHT_PAREN.getDelimiter());
+			if(i < infosToConvert.size() - 1) {
+				columnValuesToReplaceInTemplate.append(sequenceDelimiter.getDelimiter());
+			}
+		}
+
+		// TODO Factor in clause creation logic
+		return CrudStatementManager.buildInsertSQLStatement(schemaName, destinationTable, columnNamesToReplaceInTemplate.toString(), columnValuesToReplaceInTemplate.toString());
+	}
+
+	private static String buildSelectSQLString(String schemaName, String destinationTable, CrudOperationInfo crudOperationInfo, Class<? extends DBInfo> containerClass) {
 		CrudDelimiter sequenceDelimiter = CrudDelimiter.COMMA;
 
 		Field[] fieldsToSelect = containerClass.getDeclaredFields();
@@ -81,8 +140,8 @@ public class DBInfoTransposer {
 
 		StringBuilder clauseForSelectStatement = new StringBuilder();
 		// if num clauses > 1 append 'AND' next clause to sb
-		if(unSanitizedClause != null) {
-			String[] splitClauses = unSanitizedClause.split("[,]");
+		if(crudOperationInfo.getUnsanitizedClause() != null) {
+			String[] splitClauses = crudOperationInfo.getUnsanitizedClause().split("[,]");
 			for(int i = 0; i < splitClauses.length; i++) {
 				String[] nameAndValue = splitClauses[i].split("[=]");
 				if(nameAndValue.length > 1) {
@@ -122,38 +181,6 @@ public class DBInfoTransposer {
 			}
 		}
 		return -1;
-	}
-
-	private static String buildInsertSQLString(String schemaName, String destinationTable, List<DBInfo> infosToConvert) {
-		CrudDelimiter sequenceDelimiter = CrudDelimiter.COMMA;
-
-		DBInfo infoToConvert = infosToConvert.get(0);
-		Field[] fieldsToConvert = infoToConvert.getClass().getDeclaredFields();
-		List<String> convertedFieldNames = ConversionUtil.convertCamelCaseAttributesToSql(fieldsToConvert);
-		StringBuilder columnNamesToReplaceInTemplate = new StringBuilder();
-		for(int i = 0; i < convertedFieldNames.size(); i++) {
-			String nextColumn = convertedFieldNames.get(i);
-			if(!nextColumn.equals("id")) {
-				columnNamesToReplaceInTemplate.append(nextColumn);
-				if(i < convertedFieldNames.size() - 1) {
-					columnNamesToReplaceInTemplate.append(sequenceDelimiter.getDelimiter());
-				}
-			}
-		}
-
-		StringBuilder columnValuesToReplaceInTemplate = new StringBuilder();
-		for(int i = 0; i < infosToConvert.size(); i++) {
-			columnValuesToReplaceInTemplate.append(CrudDelimiter.LEFT_PAREN.getDelimiter());
-			String commaSepColumnValues = ConversionUtil.toCommaSeparatedString(infosToConvert.get(i));
-			columnValuesToReplaceInTemplate.append(commaSepColumnValues);
-
-			columnValuesToReplaceInTemplate.append(CrudDelimiter.RIGHT_PAREN.getDelimiter());
-			if(i < infosToConvert.size() - 1) {
-				columnValuesToReplaceInTemplate.append(sequenceDelimiter.getDelimiter());
-			}
-		}
-
-		return CrudStatementManager.buildInsertSQLStatement(schemaName, destinationTable, columnNamesToReplaceInTemplate.toString(), columnValuesToReplaceInTemplate.toString());
 	}
 
 }

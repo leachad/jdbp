@@ -98,7 +98,6 @@ public class SelectStatement implements SyntacticStatement {
 	public void addClause(CrudClause clause) {
 		crudClauses.add(new StatementTuple<Integer, CrudClause>(currentTupleIndex, clause));
 		currentTupleIndex++;
-
 	}
 
 }

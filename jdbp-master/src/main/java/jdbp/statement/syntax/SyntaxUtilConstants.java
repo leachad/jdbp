@@ -12,7 +12,7 @@ public class SyntaxUtilConstants {
 		public static final String DELIMITER_PATTERN = "delimiter#[/[/(,.;)/]/=]+";
 		public static final String DYNAMIC_VALUE_PATTERN = "<[A-Za-z._]+>+";
 		public static final String PLAIN_TEXT_PATTERN = "[A-Za-z]+";
-		public static final String CLAUSE_PATTERN = "clause#[A-Za-z]+";
+		public static final String CLAUSE_PATTERN = "clause#[A-Za-z_]+";
 	}
 
 }

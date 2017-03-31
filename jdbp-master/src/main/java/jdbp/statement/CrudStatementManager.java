@@ -75,4 +75,9 @@ public class CrudStatementManager {
 		return selectStatementTemplate;
 	}
 
+	public static String buildUpdateSQLStatement(String schemaName, String destinationTable, String columnValuesToUpdate, String valueTuplesToInsert, String clauseToRestrictResults) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
 }

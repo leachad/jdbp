@@ -13,7 +13,7 @@ import jdbp.exception.JdbpException;
 import jdbp.model.DBInfo;
 import jdbp.parser.DBInfoTransposer;
 import jdbp.parser.ResultSetTransposer;
-import jdbp.statement.syntax.crud.CrudOperation;
+import jdbp.statement.syntax.crud.CrudOperationInfo;
 import jdbp.statement.syntax.sproc.JdbpCallableStatement;
 
 /**
@@ -54,6 +54,7 @@ public abstract class AbstractSchema extends ConnectionManager {
 			try {
 				if(!pooledConnection.getAutoCommit()) {
 					pooledConnection.rollback();
+
 				}
 			}
 			catch(SQLException eE) {
@@ -87,12 +88,12 @@ public abstract class AbstractSchema extends ConnectionManager {
 	 * @return
 	 * @throws JdbpException
 	 */
-	protected boolean executePreparedUpdate(CrudOperation crudOperation, String destinationTable, List<DBInfo> infosToUpdate) throws JdbpException {
+	protected boolean executePreparedUpdate(CrudOperationInfo crudOperationInfo, String destinationTable, List<DBInfo> infosToUpdate) throws JdbpException {
 		boolean isSuccess = false;
 		Connection pooledConnection = getConnection();
 		PreparedStatement preparedUpdateStatement = null;
 		try {
-			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLUpdateString(schemaName, destinationTable, crudOperation, infosToUpdate);
+			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLUpdateString(schemaName, destinationTable, crudOperationInfo, infosToUpdate);
 			preparedUpdateStatement = pooledConnection.prepareStatement(infosStringToUpdateUnsanitized);
 			int result = preparedUpdateStatement.executeUpdate();
 			isSuccess = result == 1 ? true : false;
@@ -130,20 +131,20 @@ public abstract class AbstractSchema extends ConnectionManager {
 	 * Abstract that executes an update that is expected to return a ResultSet [Ex: SELECT,
 	 * 
 	 * @param schemaName
-	 * @param crudOperation
+	 * @param crudOperationInfo
 	 * @param destinationTableName
 	 * @param containerClass
 	 * @return
 	 * @throws JdbpException
 	 */
-	protected List<DBInfo> executePreparedQuery(CrudOperation crudOperation, String destinationTableName, String unsanitizedClause, Class<? extends DBInfo> containerClass) throws JdbpException {
+	protected List<DBInfo> executePreparedQuery(CrudOperationInfo crudOperationInfo, String destinationTableName, Class<? extends DBInfo> containerClass) throws JdbpException {
 		List<DBInfo> dbInfos = null;
 
 		ResultSet resultSet = null;
 		Connection pooledConnection = getConnection();
 		PreparedStatement preparedQueryStatement = null;
 		try {
-			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSqlQueryString(schemaName, destinationTableName, crudOperation, unsanitizedClause, containerClass);
+			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLQueryString(schemaName, destinationTableName, crudOperationInfo, containerClass);
 			preparedQueryStatement = pooledConnection.prepareStatement(infosStringToUpdateUnsanitized);
 			resultSet = preparedQueryStatement.executeQuery();
 			dbInfos = ResultSetTransposer.transposeResultSet(resultSet, containerClass);

@@ -8,6 +8,7 @@ public enum CrudOperation {
 	CREATE("create", CreateStatement.class), SELECT("select", SelectStatement.class), UPDATE("update", UpdateStatement.class), DELETE("delete", DeleteStatement.class), INSERT("insert", InsertStatement.class), ALTER("alter", AlterStatement.class), DROP("drop", DropStatement.class);
 	private String operation;
 	private Class<? extends SyntacticStatement> statementClass;
+	private String unsanitizedClause;
 
 	CrudOperation(String operation, Class<? extends SyntacticStatement> statementClass) {
 		this.operation = operation;
@@ -16,6 +17,14 @@ public enum CrudOperation {
 
 	public String getOperation() {
 		return operation;
+	}
+
+	public void setUnsanitizedClause(String unsanitizedClause) {
+		this.unsanitizedClause = unsanitizedClause;
+	}
+
+	public String getUnsanitizedClause() {
+		return this.unsanitizedClause;
 	}
 
 	/**
