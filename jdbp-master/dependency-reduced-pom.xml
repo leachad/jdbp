@@ -2,8 +2,8 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.andrewdleach</groupId>
-  <artifactId>jdbp-master</artifactId>
-  <name>jdbp</name>
+  <artifactId>com.andrewdleach.jdbp-master</artifactId>
+  <name>com.andrewdleach.jdbp</name>
   <version>0.0.1-SNAPSHOT</version>
   <description>Lightweight database wrapper for jdbc 4 implementations</description>
   <build>
@@ -57,5 +57,19 @@
       </plugin>
     </plugins>
   </build>
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.12</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <artifactId>hamcrest-core</artifactId>
+          <groupId>org.hamcrest</groupId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+  </dependencies>
 </project>
 

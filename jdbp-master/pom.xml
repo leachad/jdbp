@@ -1,9 +1,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.andrewdleach</groupId>
-  <artifactId>jdbp-master</artifactId>
+  <artifactId>com.andrewdleach.jdbp-master</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <name>jdbp</name>
+  <name>com.andrewdleach.jdbp</name>
   <description>Lightweight database wrapper for jdbc 4 implementations</description>
   <dependencies>
    	<dependency>
@@ -11,6 +11,17 @@
         <artifactId>HikariCP</artifactId>
         <version>2.5.1</version>
     </dependency>
+    <dependency>
+	    <groupId>junit</groupId>
+	    <artifactId>junit</artifactId>
+	    <version>4.12</version>
+	    <scope>test</scope>
+	</dependency>
+    <dependency>
+	    <groupId>org.jmockit</groupId>
+	    <artifactId>jmockit</artifactId>
+	    <version>1.31</version>
+	</dependency>
   </dependencies>
   <build>
     <plugins>
