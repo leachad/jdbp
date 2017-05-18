@@ -12,11 +12,12 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 import com.andrewdleach.jdbp.host.HostManager;
+import com.andrewdleach.jdbp.properties.util.SQLUtil;
 import com.andrewdleach.jdbp.schema.SchemaManager;
 
 /**
- * Utility to obtain the com.andrewdleach.jdbp.driver in the classpath, check if it is compatible against the predefined list of drivers and register it with the
- * com.andrewdleach.jdbp.driver manager
+ * Utility to obtain the com.andrewdleach.jdbp.driver in the classpath, check if it is compatible against the predefined list of drivers and register
+ * it with the com.andrewdleach.jdbp.driver manager
  * 
  * @since 12.1.2016
  * @author andrew.leach
@@ -48,6 +49,9 @@ public class DriverLocator {
 				String requestedDriverName = jdbpProps.getString(key);
 				driver = DriverLocator.locateDriver(requestedDriverName);
 				DriverStorage.setRequestedDriverName(requestedDriverName);
+				if(SQLUtil.isNoSQLDriver(requestedDriverName)) {
+					SchemaManager.setNoSqlDriver(true);
+				}
 			}
 			else if(key.equals(LOAD_BALANCED)) {
 				SchemaManager.setLoadBalanced(jdbpProps.getString(key));
@@ -93,8 +97,8 @@ public class DriverLocator {
 	}
 
 	/**
-	 * Utility method to locate the requested com.andrewdleach.jdbp.driver by driverName if you have more than one com.andrewdleach.jdbp.driver in the classpath supporting
-	 * the same JDBC protocol(s)
+	 * Utility method to locate the requested com.andrewdleach.jdbp.driver by driverName if you have more than one com.andrewdleach.jdbp.driver in the
+	 * classpath supporting the same JDBC protocol(s)
 	 * 
 	 * @param driverName
 	 * @return the requestedDriver instance

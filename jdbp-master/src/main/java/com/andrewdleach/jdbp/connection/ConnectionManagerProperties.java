@@ -11,6 +11,7 @@ public class ConnectionManagerProperties {
 	private Properties propertiesInfo;
 	private boolean propertiesNoCredentials;
 	private boolean noPropertiesNoCredentials;
+	private boolean isNoSqlSchema;
 
 	public ConnectionManagerProperties() {}
 
@@ -76,5 +77,13 @@ public class ConnectionManagerProperties {
 
 	public void setNoPropertiesNoCredentials(boolean noPropertiesNoCredentials) {
 		this.noPropertiesNoCredentials = noPropertiesNoCredentials;
+	}
+
+	public boolean isNoSqlSchema() {
+		return isNoSqlSchema;
+	}
+
+	public void setNoSqlSchema(boolean isNoSqlSchema) {
+		this.isNoSqlSchema = isNoSqlSchema;
 	}
 }

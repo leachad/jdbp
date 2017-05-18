@@ -3,7 +3,10 @@ package com.andrewdleach.jdbp.connection;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import com.andrewdleach.jdbp.connection.nosql.NoSqlDataSource;
+import com.andrewdleach.jdbp.connection.nosql.NoSqlDataSourceConfig;
 import com.andrewdleach.jdbp.exception.JdbpException;
+import com.mongodb.MongoClient;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -17,10 +20,16 @@ public class ConnectionManager {
 
 	private ConnectionManagerProperties connectionManagerProperties;
 	private HikariDataSource hikariDataSource;
+	private NoSqlDataSource noSqlDataSource;
 
 	public ConnectionManager(ConnectionManagerProperties connectionManagerProperties) {
 		this.connectionManagerProperties = connectionManagerProperties;
-		initializeDataSource();
+		if(connectionManagerProperties.isNoSqlSchema()) {
+			initializeNoSqlDataSource();
+		}
+		else {
+			initializeHikariDataSource();
+		}
 	}
 
 	public void closeDataSource() {
@@ -28,6 +37,14 @@ public class ConnectionManager {
 	}
 
 	public Connection getConnection() throws JdbpException {
+		return getHikariConnection();
+	}
+
+	public MongoClient getNoSqlMongoClient() {
+		return getNoSqlDataSource().getMongoDataSource();
+	}
+
+	private Connection getHikariConnection() throws JdbpException {
 		Connection connection = null;
 		try {
 			if(isCredentialsNoProperties() && isHikariEnablesCredentials()) {
@@ -43,7 +60,7 @@ public class ConnectionManager {
 		return connection;
 	}
 
-	public void initializeDataSource() {
+	public void initializeHikariDataSource() {
 		HikariConfig config = new HikariConfig();
 		config.setJdbcUrl(getTargetUrl());
 		if(isCredentialsNoProperties()) {
@@ -52,7 +69,16 @@ public class ConnectionManager {
 		}
 
 		hikariDataSource = new HikariDataSource(config);
+	}
 
+	public void initializeNoSqlDataSource() {
+		NoSqlDataSourceConfig config = new NoSqlDataSourceConfig();
+		config.setTargetUrl(getTargetUrl());
+		if(isCredentialsNoProperties()) {
+			config.setUsername(getUsername());
+			config.setPassword(getPassword());
+		}
+		noSqlDataSource = new NoSqlDataSource(config);
 	}
 
 	private String getTargetUrl() {
@@ -77,5 +103,9 @@ public class ConnectionManager {
 
 	private HikariDataSource getHikariDataSource() {
 		return hikariDataSource;
+	}
+
+	private NoSqlDataSource getNoSqlDataSource() {
+		return noSqlDataSource;
 	}
 }

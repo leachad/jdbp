@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 
 import com.andrewdleach.jdbp.connection.ConnectionManagerProperties;
 import com.andrewdleach.jdbp.driver.DriverStorage;
@@ -16,8 +17,6 @@ import com.andrewdleach.jdbp.host.HostManager;
 import com.andrewdleach.jdbp.properties.util.DriverUtil;
 import com.andrewdleach.jdbp.properties.util.StatementUtil;
 import com.andrewdleach.jdbp.statement.syntax.sproc.JdbpCallableStatement;
-
-import java.util.Properties;
 
 /**
  * @author andrew.leach
@@ -33,6 +32,7 @@ public class SchemaManager {
 	private static boolean loadBalanced;
 	private static boolean propDefinedStatements;
 	private static boolean dbDefinedStatements;
+	private static boolean noSqlDriver;
 
 	public SchemaManager() {
 		throw new UnsupportedOperationException();
@@ -114,10 +114,19 @@ public class SchemaManager {
 		else if(!userCredentialsProvided() && !propertiesInfoProvided()) {
 			connectionManagerProperties.setNoPropertiesNoCredentials(true);
 		}
+
+		AbstractSchema schema = null;
+		if(SchemaManager.noSqlDriver) {
+			connectionManagerProperties.setNoSqlSchema(true);
+			schema = new JdbpNoSqlSchema(schemaName, connectionManagerProperties);
+		}
+		else {
+			schema = new JdbpSchema(schemaName, connectionManagerProperties);
+		}
+
 		if(propDefinedStatements || dbDefinedStatements) {
 
 		}
-		JdbpSchema schema = new JdbpSchema(schemaName, connectionManagerProperties);
 
 		if(propDefinedStatements || dbDefinedStatements) {
 			List<JdbpCallableStatement> statements = null;
@@ -233,5 +242,10 @@ public class SchemaManager {
 		if(Boolean.getBoolean(dbDefinedStatements)) {
 			SchemaManager.dbDefinedStatements = Boolean.getBoolean(dbDefinedStatements);
 		}
+	}
+
+	public static void setNoSqlDriver(boolean noSqlDriver) {
+		SchemaManager.noSqlDriver = noSqlDriver;
+
 	}
 }

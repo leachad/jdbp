@@ -15,6 +15,8 @@ import com.andrewdleach.jdbp.parser.DBInfoTransposer;
 import com.andrewdleach.jdbp.parser.ResultSetTransposer;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperationInfo;
 import com.andrewdleach.jdbp.statement.syntax.sproc.JdbpCallableStatement;
+import com.mongodb.DB;
+import com.mongodb.MongoClient;
 
 /**
  * @since 12.1.16
@@ -269,6 +271,15 @@ public abstract class AbstractSchema extends ConnectionManager {
 		statementInfo.setRawCallableStatement(statementName);
 		return statementInfo;
 
+	}
+
+	protected List<DBInfo> executeNoSqlGet(String destinationDBName, Class<? extends DBInfo> containerClass) throws JdbpException {
+		MongoClient mongoClient = getNoSqlMongoClient();
+		DB database = mongoClient.getDatabase(destinationDBName);
+	}
+
+	protected List<DBInfo> executeNoSqlInsert(String destinationTableName, List<DBInfo> dbInfos, Class<? extends DBInfo> containerClass) throws JdbpException {
+		MongoClient mongoClient = getNoSqlMongoClient();
 	}
 
 }
