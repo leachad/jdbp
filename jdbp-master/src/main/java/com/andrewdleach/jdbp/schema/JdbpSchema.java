@@ -6,7 +6,7 @@ package com.andrewdleach.jdbp.schema;
 import java.util.Collections;
 import java.util.List;
 
-import com.andrewdleach.jdbp.connection.ConnectionManagerProperties;
+import com.andrewdleach.jdbp.connection.JdbpSchemaConnectionManagerProperties;
 import com.andrewdleach.jdbp.exception.JdbpException;
 import com.andrewdleach.jdbp.model.DBInfo;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperation;
@@ -18,15 +18,11 @@ import com.andrewdleach.jdbp.statement.syntax.sproc.JdbpCallableStatement;
  */
 public class JdbpSchema extends AbstractSchema {
 
-	private String schemaName;
-	private List<JdbpCallableStatement> statements;
-
 	/**
 	 * @param schemaName
 	 */
-	public JdbpSchema(String schemaName, ConnectionManagerProperties connectionManagerProperties) {
-		super(schemaName, connectionManagerProperties);
-		this.schemaName = schemaName;
+	public JdbpSchema(String schemaName, String driverName, JdbpSchemaConnectionManagerProperties connectionManagerProperties) {
+		super(schemaName, driverName, connectionManagerProperties);
 	}
 
 	/**
@@ -138,22 +134,6 @@ public class JdbpSchema extends AbstractSchema {
 		JdbpCallableStatement statementInfo = prepareStatementInfo(procedureName);
 		return executeCallableStatement(procedureName, statementInfo, containerClass);
 
-	}
-
-	public String getSchemaName() {
-		return schemaName;
-	}
-
-	public void setSchemaName(String schemaName) {
-		this.schemaName = schemaName;
-	}
-
-	public void setAvailableStatements(List<JdbpCallableStatement> statements) {
-		this.statements = statements;
-	}
-
-	public List<JdbpCallableStatement> getAvailableStatements() {
-		return statements;
 	}
 
 }

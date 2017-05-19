@@ -3,8 +3,12 @@
  */
 package com.andrewdleach.jdbp.parser;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
+
+import org.bson.BsonDocument;
 
 import com.andrewdleach.jdbp.exception.JdbpException;
 import com.andrewdleach.jdbp.model.DBInfo;
@@ -13,6 +17,8 @@ import com.andrewdleach.jdbp.statement.syntax.crud.CrudClause;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudDelimiter;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperation;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperationInfo;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mongodb.BasicDBObject;
 
 /**
  * @since 1.24.17
@@ -181,6 +187,24 @@ public class DBInfoTransposer {
 			}
 		}
 		return -1;
+	}
+
+	public static List<BsonDocument> constructNoSqlUpdateJson(List<DBInfo> dbInfos, Class<? extends DBInfo> containerClass) throws JdbpException {
+		List<BsonDocument> bsonDocuments = new ArrayList<>();
+		ObjectMapper objectMapper = new ObjectMapper();
+		for(DBInfo dbInfo: dbInfos) {
+			try {
+				String dbInfoJsonString = objectMapper.writeValueAsString(dbInfo);
+				BasicDBObject basicDBObject = BasicDBObject.parse(dbInfoJsonString);
+				BsonDocument bsonDocument = basicDBObject.toBsonDocument(null, null);
+				bsonDocuments.add(bsonDocument);
+
+			}
+			catch(IOException e) {
+				JdbpException.throwException(e);
+			}
+		}
+		return bsonDocuments;
 	}
 
 }

@@ -5,30 +5,46 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.List;
 
-import com.andrewdleach.jdbp.connection.ConnectionManager;
-import com.andrewdleach.jdbp.connection.ConnectionManagerProperties;
+import org.bson.BsonDocument;
+import org.bson.Document;
+
+import com.andrewdleach.jdbp.connection.JdbpSchemaConnectionManager;
+import com.andrewdleach.jdbp.connection.JdbpSchemaConnectionManagerProperties;
+import com.andrewdleach.jdbp.connection.nosql.NoSqlDataSource;
 import com.andrewdleach.jdbp.exception.JdbpException;
 import com.andrewdleach.jdbp.model.DBInfo;
 import com.andrewdleach.jdbp.parser.DBInfoTransposer;
 import com.andrewdleach.jdbp.parser.ResultSetTransposer;
+import com.andrewdleach.jdbp.properties.util.SQLUtil;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperationInfo;
 import com.andrewdleach.jdbp.statement.syntax.sproc.JdbpCallableStatement;
-import com.mongodb.DB;
 import com.mongodb.MongoClient;
+import com.mongodb.client.FindIterable;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoDatabase;
 
 /**
  * @since 12.1.16
  * @author andrew.leach
  */
-public abstract class AbstractSchema extends ConnectionManager {
+public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 
-	private String schemaName;
+	private List<JdbpCallableStatement> statements;
 
-	protected AbstractSchema(String schemaName, ConnectionManagerProperties connectionManagerProperties) {
-		super(connectionManagerProperties);
-		this.schemaName = schemaName;
+	protected AbstractSchema(String schemaName, String driverName, JdbpSchemaConnectionManagerProperties connectionManagerProperties) {
+		super(schemaName, driverName, connectionManagerProperties);
+	}
+
+	public void closeDataSource() {
+		if(SQLUtil.isNoSQLDriver(getDriverName())) {
+			closeNoSqlDataSource();
+		}
+		else {
+			closeHikariDataSource();
+		}
 	}
 
 	/**
@@ -95,7 +111,7 @@ public abstract class AbstractSchema extends ConnectionManager {
 		Connection pooledConnection = getConnection();
 		PreparedStatement preparedUpdateStatement = null;
 		try {
-			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLUpdateString(schemaName, destinationTable, crudOperationInfo, infosToUpdate);
+			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLUpdateString(getSchemaName(), destinationTable, crudOperationInfo, infosToUpdate);
 			preparedUpdateStatement = pooledConnection.prepareStatement(infosStringToUpdateUnsanitized);
 			int result = preparedUpdateStatement.executeUpdate();
 			isSuccess = result == 1 ? true : false;
@@ -146,7 +162,7 @@ public abstract class AbstractSchema extends ConnectionManager {
 		Connection pooledConnection = getConnection();
 		PreparedStatement preparedQueryStatement = null;
 		try {
-			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLQueryString(schemaName, destinationTableName, crudOperationInfo, containerClass);
+			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLQueryString(getSchemaName(), destinationTableName, crudOperationInfo, containerClass);
 			preparedQueryStatement = pooledConnection.prepareStatement(infosStringToUpdateUnsanitized);
 			resultSet = preparedQueryStatement.executeQuery();
 			dbInfos = ResultSetTransposer.transposeResultSet(resultSet, containerClass);
@@ -273,13 +289,38 @@ public abstract class AbstractSchema extends ConnectionManager {
 
 	}
 
-	protected List<DBInfo> executeNoSqlGet(String destinationDBName, Class<? extends DBInfo> containerClass) throws JdbpException {
-		MongoClient mongoClient = getNoSqlMongoClient();
-		DB database = mongoClient.getDatabase(destinationDBName);
+	protected List<DBInfo> executeNoSqlGet(String destinationTableName, Class<? extends DBInfo> containerClass) throws JdbpException {
+		List<DBInfo> noSqlDBInfos = new ArrayList<>();
+		if(SQLUtil.isMongoDriver(getDriverName())) {
+			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
+			MongoClient mongoClient = noSqlDataSource.getMongoClient();
+			MongoDatabase mongoDatabase = mongoClient.getDatabase(noSqlDataSource.getSchemaName());
+			MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
+			FindIterable<Document> iterableCollection = mongoCollection.find();
+			for(Document document: iterableCollection) {
+
+			}
+
+		}
+		return noSqlDBInfos;
 	}
 
-	protected List<DBInfo> executeNoSqlInsert(String destinationTableName, List<DBInfo> dbInfos, Class<? extends DBInfo> containerClass) throws JdbpException {
-		MongoClient mongoClient = getNoSqlMongoClient();
+	protected boolean executeNoSqlUpdate(String destinationTableName, List<DBInfo> dbInfos, Class<? extends DBInfo> containerClass) throws JdbpException {
+		boolean isSuccess = false;
+		if(SQLUtil.isMongoDriver(getDriverName())) {
+			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
+			MongoClient mongoClient = noSqlDataSource.getMongoClient();
+			MongoDatabase mongoDatabase = mongoClient.getDatabase(noSqlDataSource.getSchemaName());
+			MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
+			List<BsonDocument> dbInfosConvertedToBsonDocuments = DBInfoTransposer.constructNoSqlUpdateJson(dbInfos, containerClass);
+			// mongoCollection.insertMany(dbInfosConvertedToBsonDocuments);
+			mongoClient.close();
+		}
+		return isSuccess;
+	}
+
+	public void setAvailableStatements(List<JdbpCallableStatement> statements) {
+		this.statements = statements;
 	}
 
 }

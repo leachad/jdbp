@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import com.andrewdleach.jdbp.connection.nosql.NoSqlDataSource;
 import com.andrewdleach.jdbp.connection.nosql.NoSqlDataSourceConfig;
 import com.andrewdleach.jdbp.exception.JdbpException;
-import com.mongodb.MongoClient;
+import com.andrewdleach.jdbp.properties.util.SQLUtil;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -16,32 +16,47 @@ import com.zaxxer.hikari.HikariDataSource;
  * @since 12.1.2016
  * @author andrew.leach
  */
-public class ConnectionManager {
+public class JdbpSchemaConnectionManager {
 
-	private ConnectionManagerProperties connectionManagerProperties;
+	private JdbpSchemaConnectionManagerProperties connectionManagerProperties;
 	private HikariDataSource hikariDataSource;
 	private NoSqlDataSource noSqlDataSource;
+	private String schemaName;
+	private String driverName;
 
-	public ConnectionManager(ConnectionManagerProperties connectionManagerProperties) {
+	public JdbpSchemaConnectionManager(String schemaName, String driverName, JdbpSchemaConnectionManagerProperties connectionManagerProperties) {
 		this.connectionManagerProperties = connectionManagerProperties;
-		if(connectionManagerProperties.isNoSqlSchema()) {
-			initializeNoSqlDataSource();
+		this.driverName = driverName;
+		if(SQLUtil.isNoSQLDriver(driverName)) {
+			initializeNoSqlDataSource(schemaName);
 		}
 		else {
 			initializeHikariDataSource();
 		}
 	}
 
-	public void closeDataSource() {
+	protected String getSchemaName() {
+		return schemaName;
+	}
+
+	protected String getDriverName() {
+		return driverName;
+	}
+
+	protected void closeHikariDataSource() {
 		getHikariDataSource().close();
 	}
 
-	public Connection getConnection() throws JdbpException {
+	protected void closeNoSqlDataSource() {
+		getNoSqlDataSource().close();
+	}
+
+	protected Connection getConnection() throws JdbpException {
 		return getHikariConnection();
 	}
 
-	public MongoClient getNoSqlMongoClient() {
-		return getNoSqlDataSource().getMongoDataSource();
+	protected NoSqlDataSource getNoSqlConnection() {
+		return getNoSqlDataSource();
 	}
 
 	private Connection getHikariConnection() throws JdbpException {
@@ -60,7 +75,7 @@ public class ConnectionManager {
 		return connection;
 	}
 
-	public void initializeHikariDataSource() {
+	private void initializeHikariDataSource() {
 		HikariConfig config = new HikariConfig();
 		config.setJdbcUrl(getTargetUrl());
 		if(isCredentialsNoProperties()) {
@@ -71,14 +86,14 @@ public class ConnectionManager {
 		hikariDataSource = new HikariDataSource(config);
 	}
 
-	public void initializeNoSqlDataSource() {
+	private void initializeNoSqlDataSource(String schemaName) {
 		NoSqlDataSourceConfig config = new NoSqlDataSourceConfig();
 		config.setTargetUrl(getTargetUrl());
 		if(isCredentialsNoProperties()) {
 			config.setUsername(getUsername());
 			config.setPassword(getPassword());
 		}
-		noSqlDataSource = new NoSqlDataSource(config);
+		noSqlDataSource = new NoSqlDataSource(config, schemaName);
 	}
 
 	private String getTargetUrl() {

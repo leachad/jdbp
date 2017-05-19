@@ -2,7 +2,7 @@ package com.andrewdleach.jdbp.connection;
 
 import java.util.Properties;
 
-public class ConnectionManagerProperties {
+public class JdbpSchemaConnectionManagerProperties {
 	private String targetUrl;
 	private boolean credentialsNoProperties;
 	private boolean hikariEnablesCredentials;
@@ -11,9 +11,8 @@ public class ConnectionManagerProperties {
 	private Properties propertiesInfo;
 	private boolean propertiesNoCredentials;
 	private boolean noPropertiesNoCredentials;
-	private boolean isNoSqlSchema;
 
-	public ConnectionManagerProperties() {}
+	public JdbpSchemaConnectionManagerProperties() {}
 
 	public String getTargetUrl() {
 		return targetUrl;
@@ -79,11 +78,4 @@ public class ConnectionManagerProperties {
 		this.noPropertiesNoCredentials = noPropertiesNoCredentials;
 	}
 
-	public boolean isNoSqlSchema() {
-		return isNoSqlSchema;
-	}
-
-	public void setNoSqlSchema(boolean isNoSqlSchema) {
-		this.isNoSqlSchema = isNoSqlSchema;
-	}
 }

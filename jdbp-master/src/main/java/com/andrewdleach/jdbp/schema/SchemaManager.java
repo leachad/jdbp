@@ -10,11 +10,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 
-import com.andrewdleach.jdbp.connection.ConnectionManagerProperties;
+import com.andrewdleach.jdbp.connection.JdbpSchemaConnectionManagerProperties;
 import com.andrewdleach.jdbp.driver.DriverStorage;
 import com.andrewdleach.jdbp.exception.JdbpException;
 import com.andrewdleach.jdbp.host.HostManager;
 import com.andrewdleach.jdbp.properties.util.DriverUtil;
+import com.andrewdleach.jdbp.properties.util.SQLUtil;
 import com.andrewdleach.jdbp.properties.util.StatementUtil;
 import com.andrewdleach.jdbp.statement.syntax.sproc.JdbpCallableStatement;
 
@@ -22,7 +23,7 @@ import com.andrewdleach.jdbp.statement.syntax.sproc.JdbpCallableStatement;
  * @author andrew.leach
  */
 public class SchemaManager {
-	private static Map<String, JdbpSchema> schemaMap = new HashMap<>();
+	private static Map<String, AbstractSchema> schemaMap = new HashMap<>();
 	private static List<String> schemaNames = new ArrayList<>();
 
 	private static Map<String, String> urlParamArgPairs;
@@ -32,7 +33,6 @@ public class SchemaManager {
 	private static boolean loadBalanced;
 	private static boolean propDefinedStatements;
 	private static boolean dbDefinedStatements;
-	private static boolean noSqlDriver;
 
 	public SchemaManager() {
 		throw new UnsupportedOperationException();
@@ -46,8 +46,8 @@ public class SchemaManager {
 	 * @return
 	 * @throws JdbpException
 	 */
-	public static JdbpSchema getSchema(String schemaName) throws JdbpException {
-		JdbpSchema dbInstance = schemaMap.get(schemaName);
+	public static AbstractSchema getSchema(String schemaName) throws JdbpException {
+		AbstractSchema dbInstance = schemaMap.get(schemaName);
 		if(dbInstance == null) {
 			dbInstance = buildJdbpSchemaFromProperties(schemaName);
 			schemaMap.put(schemaName, dbInstance);
@@ -72,15 +72,15 @@ public class SchemaManager {
 	public static void createAllSchemasFromProperties() throws JdbpException {
 		if(schemaNames != null) {
 			for(String schemaName: schemaNames) {
-				JdbpSchema dbInstance = buildJdbpSchemaFromProperties(schemaName);
+				AbstractSchema dbInstance = buildJdbpSchemaFromProperties(schemaName);
 				schemaMap.put(schemaName, dbInstance);
 			}
 		}
 	}
 
 	public static void closeAllDataSources() {
-		List<JdbpSchema> schemaContainers = SchemaManager.getAvailableSchemas();
-		for(JdbpSchema schemaContainer: schemaContainers) {
+		List<AbstractSchema> schemaContainers = SchemaManager.getAvailableSchemas();
+		for(AbstractSchema schemaContainer: schemaContainers) {
 			schemaContainer.closeDataSource();
 		}
 	}
@@ -89,7 +89,7 @@ public class SchemaManager {
 	 * @param schemaName
 	 * @return a fully built schemaContainer
 	 */
-	private static JdbpSchema buildJdbpSchemaFromProperties(String schemaName) throws JdbpException {
+	private static AbstractSchema buildJdbpSchemaFromProperties(String schemaName) throws JdbpException {
 		if(HostManager.getHostNames() == null) {
 			JdbpException.throwException("database hostName cannot be null");
 		}
@@ -97,7 +97,7 @@ public class SchemaManager {
 			JdbpException.throwException(new IllegalArgumentException("schemaName must not be null"));
 		}
 
-		ConnectionManagerProperties connectionManagerProperties = new ConnectionManagerProperties();
+		JdbpSchemaConnectionManagerProperties connectionManagerProperties = new JdbpSchemaConnectionManagerProperties();
 
 		String targetUrl = buildTargetUrlForSchema(schemaName);
 		connectionManagerProperties.setTargetUrl(targetUrl);
@@ -116,12 +116,11 @@ public class SchemaManager {
 		}
 
 		AbstractSchema schema = null;
-		if(SchemaManager.noSqlDriver) {
-			connectionManagerProperties.setNoSqlSchema(true);
-			schema = new JdbpNoSqlSchema(schemaName, connectionManagerProperties);
+		if(SQLUtil.isNoSQLDriver(DriverStorage.getRequestedDriverName())) {
+			schema = new JdbpNoSqlSchema(schemaName, DriverStorage.getRequestedDriverName(), connectionManagerProperties);
 		}
 		else {
-			schema = new JdbpSchema(schemaName, connectionManagerProperties);
+			schema = new JdbpSchema(schemaName, DriverStorage.getRequestedDriverName(), connectionManagerProperties);
 		}
 
 		if(propDefinedStatements || dbDefinedStatements) {
@@ -187,7 +186,7 @@ public class SchemaManager {
 		return targetUrlBuilder.toString();
 	}
 
-	private static List<JdbpSchema> getAvailableSchemas() {
+	private static List<AbstractSchema> getAvailableSchemas() {
 		return new ArrayList<>(schemaMap.values());
 	}
 
