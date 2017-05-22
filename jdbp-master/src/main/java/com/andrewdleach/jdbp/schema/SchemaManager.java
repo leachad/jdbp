@@ -242,9 +242,4 @@ public class SchemaManager {
 			SchemaManager.dbDefinedStatements = Boolean.getBoolean(dbDefinedStatements);
 		}
 	}
-
-	public static void setNoSqlDriver(boolean noSqlDriver) {
-		SchemaManager.noSqlDriver = noSqlDriver;
-
-	}
 }

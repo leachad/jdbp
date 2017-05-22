@@ -7,7 +7,7 @@ import com.andrewdleach.jdbp.driver.DriverLocator;
 import com.andrewdleach.jdbp.exception.JdbpException;
 import com.andrewdleach.jdbp.logger.JdbpLogger;
 import com.andrewdleach.jdbp.properties.PropertySetManager;
-import com.andrewdleach.jdbp.schema.JdbpSchema;
+import com.andrewdleach.jdbp.schema.AbstractSchema;
 import com.andrewdleach.jdbp.schema.SchemaManager;
 
 /**
@@ -51,7 +51,7 @@ public class Jdbp {
 	 * @return
 	 * @throws JdbpException
 	 */
-	public JdbpSchema getDatabase(String schemaName) throws JdbpException {
+	public AbstractSchema getDatabase(String schemaName) throws JdbpException {
 		return SchemaManager.getSchema(schemaName);
 	}
 }

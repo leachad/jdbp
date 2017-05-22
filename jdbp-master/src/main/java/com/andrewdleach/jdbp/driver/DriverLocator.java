@@ -12,7 +12,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 
 import com.andrewdleach.jdbp.host.HostManager;
-import com.andrewdleach.jdbp.properties.util.SQLUtil;
 import com.andrewdleach.jdbp.schema.SchemaManager;
 
 /**
@@ -49,9 +48,6 @@ public class DriverLocator {
 				String requestedDriverName = jdbpProps.getString(key);
 				driver = DriverLocator.locateDriver(requestedDriverName);
 				DriverStorage.setRequestedDriverName(requestedDriverName);
-				if(SQLUtil.isNoSQLDriver(requestedDriverName)) {
-					SchemaManager.setNoSqlDriver(true);
-				}
 			}
 			else if(key.equals(LOAD_BALANCED)) {
 				SchemaManager.setLoadBalanced(jdbpProps.getString(key));
