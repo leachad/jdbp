@@ -2,6 +2,7 @@ package com.andrewdleach.jdbp.connection.nosql;
 
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoDatabase;
 
 public class NoSqlDataSource {
 	private NoSqlDataSourceConfig config;
@@ -19,7 +20,8 @@ public class NoSqlDataSource {
 
 	private void initializeDataSource(NoSqlDataSourceConfig config) {
 		this.config = config;
-		switch(config.getDriver()) {
+		String driver = config.getDriver();
+		switch(driver) {
 			case NoSqlConstants.MONGODB:
 				initializeMongoDatasource(config);
 				break;
@@ -34,8 +36,8 @@ public class NoSqlDataSource {
 		mongoClient = new MongoClient(new MongoClientURI(config.getTargetUrl()));
 	}
 
-	public MongoClient getMongoClient() {
-		return mongoClient;
+	public MongoDatabase getMongoDatabase() {
+		return mongoClient.getDatabase(getSchemaName());
 	}
 
 	public String getSchemaName() {

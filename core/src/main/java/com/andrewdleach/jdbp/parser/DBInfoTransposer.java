@@ -8,7 +8,7 @@ import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bson.BsonDocument;
+import org.bson.Document;
 
 import com.andrewdleach.jdbp.exception.JdbpException;
 import com.andrewdleach.jdbp.model.DBInfo;
@@ -18,7 +18,9 @@ import com.andrewdleach.jdbp.statement.syntax.crud.CrudDelimiter;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperation;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperationInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.BasicDBObject;
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
+import com.mongodb.client.model.Projections;
 
 /**
  * @since 1.24.17
@@ -189,22 +191,39 @@ public class DBInfoTransposer {
 		return -1;
 	}
 
-	public static List<BsonDocument> constructNoSqlUpdateJson(List<DBInfo> dbInfos, Class<? extends DBInfo> containerClass) throws JdbpException {
-		List<BsonDocument> bsonDocuments = new ArrayList<>();
+	public static List<Document> constructNoSqlUpdateJson(List<DBInfo> dbInfos, Class<? extends DBInfo> containerClass) throws JdbpException {
+		List<Document> documents = new ArrayList<>();
 		ObjectMapper objectMapper = new ObjectMapper();
 		for(DBInfo dbInfo: dbInfos) {
 			try {
 				String dbInfoJsonString = objectMapper.writeValueAsString(dbInfo);
-				BasicDBObject basicDBObject = BasicDBObject.parse(dbInfoJsonString);
-				BsonDocument bsonDocument = basicDBObject.toBsonDocument(null, null);
-				bsonDocuments.add(bsonDocument);
+				Document basicDBObject = Document.parse(dbInfoJsonString);
+				documents.add(basicDBObject);
 
 			}
 			catch(IOException e) {
 				JdbpException.throwException(e);
 			}
 		}
-		return bsonDocuments;
+		return documents;
 	}
 
+	public static List<DBInfo> convertToDBInfosFromDocuments(MongoCollection<Document> mongoCollection, Class<? extends DBInfo> containerClass) throws JdbpException {
+		List<DBInfo> dbInfos = new ArrayList<>();
+		ObjectMapper objectMapper = new ObjectMapper();
+		MongoCursor<Document> iterator = mongoCollection.find().projection(Projections.exclude(ConversionUtil.findNoSqlCollectionExcludedFields(containerClass))).iterator();
+		while(iterator.hasNext()) {
+			try {
+				Document document = iterator.next();
+				String jsonPojoString = document.toJson();
+				DBInfo dbInfo = objectMapper.readValue(jsonPojoString, containerClass);
+				dbInfos.add(dbInfo);
+			}
+			catch(IOException e) {
+				JdbpException.throwException(e);
+			}
+		}
+		iterator.close();
+		return dbInfos;
+	}
 }

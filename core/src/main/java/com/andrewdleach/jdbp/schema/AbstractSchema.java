@@ -8,7 +8,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.bson.BsonDocument;
 import org.bson.Document;
 
 import com.andrewdleach.jdbp.connection.JdbpSchemaConnectionManager;
@@ -21,8 +20,6 @@ import com.andrewdleach.jdbp.parser.ResultSetTransposer;
 import com.andrewdleach.jdbp.properties.util.SQLUtil;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperationInfo;
 import com.andrewdleach.jdbp.statement.syntax.sproc.JdbpCallableStatement;
-import com.mongodb.MongoClient;
-import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 
@@ -293,13 +290,9 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 		List<DBInfo> noSqlDBInfos = new ArrayList<>();
 		if(SQLUtil.isMongoDriver(getDriverName())) {
 			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
-			MongoClient mongoClient = noSqlDataSource.getMongoClient();
-			MongoDatabase mongoDatabase = mongoClient.getDatabase(noSqlDataSource.getSchemaName());
+			MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
 			MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
-			FindIterable<Document> iterableCollection = mongoCollection.find();
-			for(Document document: iterableCollection) {
-
-			}
+			noSqlDBInfos = DBInfoTransposer.convertToDBInfosFromDocuments(mongoCollection, containerClass);
 
 		}
 		return noSqlDBInfos;
@@ -309,12 +302,10 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 		boolean isSuccess = false;
 		if(SQLUtil.isMongoDriver(getDriverName())) {
 			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
-			MongoClient mongoClient = noSqlDataSource.getMongoClient();
-			MongoDatabase mongoDatabase = mongoClient.getDatabase(noSqlDataSource.getSchemaName());
+			MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
 			MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
-			List<BsonDocument> dbInfosConvertedToBsonDocuments = DBInfoTransposer.constructNoSqlUpdateJson(dbInfos, containerClass);
-			// mongoCollection.insertMany(dbInfosConvertedToBsonDocuments);
-			mongoClient.close();
+			List<Document> dbInfosConvertedToDocuments = DBInfoTransposer.constructNoSqlUpdateJson(dbInfos, containerClass);
+			mongoCollection.insertMany(dbInfosConvertedToDocuments);
 		}
 		return isSuccess;
 	}

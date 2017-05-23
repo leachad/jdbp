@@ -28,7 +28,7 @@ public class JdbpSchemaConnectionManager {
 		this.connectionManagerProperties = connectionManagerProperties;
 		this.driverName = driverName;
 		if(SQLUtil.isNoSQLDriver(driverName)) {
-			initializeNoSqlDataSource(schemaName);
+			initializeNoSqlDataSource(schemaName, driverName);
 		}
 		else {
 			initializeHikariDataSource();
@@ -86,9 +86,10 @@ public class JdbpSchemaConnectionManager {
 		hikariDataSource = new HikariDataSource(config);
 	}
 
-	private void initializeNoSqlDataSource(String schemaName) {
+	private void initializeNoSqlDataSource(String schemaName, String driverName) {
 		NoSqlDataSourceConfig config = new NoSqlDataSourceConfig();
 		config.setTargetUrl(getTargetUrl());
+		config.setDriver(driverName);
 		if(isCredentialsNoProperties()) {
 			config.setUsername(getUsername());
 			config.setPassword(getPassword());

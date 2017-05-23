@@ -1,16 +1,24 @@
 package com.andrewdleach.jdbp.parser;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 
+import com.andrewdleach.jdbp.annotation.NoSQLCollection;
 import com.andrewdleach.jdbp.annotation.SQLTable;
+import com.andrewdleach.jdbp.exception.JdbpException;
 import com.andrewdleach.jdbp.logger.JdbpLogger;
 import com.andrewdleach.jdbp.logger.JdbpLoggerConstants;
 import com.andrewdleach.jdbp.model.DBInfo;
 import com.andrewdleach.jdbp.statement.syntax.SyntaxUtilConstants;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ConversionUtil {
 
@@ -73,5 +81,40 @@ public class ConversionUtil {
 			csvString.replace(csvString.lastIndexOf(Character.toString(SyntaxUtilConstants.COMMA)), csvString.length(), SyntaxUtilConstants.NO_SPACE);
 		}
 		return csvString.toString();
+	}
+
+	public static List<String> findNoSqlCollectionExcludedFields(Class<? extends DBInfo> containerClass) throws JdbpException {
+		List<String> collectionExcludedFields = new ArrayList<>();
+
+		DBInfo transposedObject = null;
+		try {
+			transposedObject = containerClass.newInstance();
+		}
+		catch(InstantiationException | IllegalAccessException e) {
+			JdbpException.throwException(e);
+		}
+
+		if(transposedObject != null && transposedObject.getClass().isAnnotationPresent(NoSQLCollection.class)) {
+			collectionExcludedFields = constructCurrentExcludedFieldNames(transposedObject);
+		}
+		return collectionExcludedFields;
+
+	}
+
+	private static List<String> constructCurrentExcludedFieldNames(DBInfo transposedObject) throws JdbpException {
+		List<String> collectionExcludedFields = new ArrayList<>();
+		String excludedFieldsAsJson = transposedObject.getClass().getAnnotation(NoSQLCollection.class).excludedFields();
+		ObjectMapper mapper = new ObjectMapper();
+		try {
+			TypeReference<HashMap<String, String[]>> typeRef = new TypeReference<HashMap<String, String[]>>() {};
+			Map<String, String[]> map = mapper.readValue(excludedFieldsAsJson, typeRef);
+			if(map.get("excludedFields") != null) {
+				collectionExcludedFields.addAll(Arrays.asList(map.get("excludedFields")));
+			}
+		}
+		catch(IOException e) {
+			JdbpException.throwException(e);
+		}
+		return collectionExcludedFields;
 	}
 }

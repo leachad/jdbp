@@ -5,6 +5,7 @@ package com.andrewdleach.jdbp.driver;
 
 import java.sql.Driver;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.ResourceBundle;
@@ -88,7 +89,8 @@ public class DriverLocator {
 	 */
 	private static Driver locateDriver() {
 		ServiceLoader<java.sql.Driver> sqlDriverLoader = ServiceLoader.load(java.sql.Driver.class);
-		Driver validDriver = sqlDriverLoader != null ? sqlDriverLoader.iterator().next() : null;
+		Iterator<java.sql.Driver> iterator = sqlDriverLoader != null ? sqlDriverLoader.iterator() : null;
+		Driver validDriver = iterator != null ? (iterator.hasNext() ? iterator.next() : null) : null;
 		return (validDriver != null && validDriver.jdbcCompliant()) ? validDriver : null;
 	}
 

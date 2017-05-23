@@ -1,5 +1,7 @@
 package com.andrewdleach.jdbp.driver;
 
+import java.util.Locale;
+
 public class DriverStorage {
 
 	private static String requestedDriverName;
@@ -9,7 +11,7 @@ public class DriverStorage {
 	}
 
 	public static void setRequestedDriverName(String requestedDriverName) {
-		DriverStorage.requestedDriverName = requestedDriverName;
+		DriverStorage.requestedDriverName = requestedDriverName.toLowerCase(Locale.getDefault());
 	}
 
 }
