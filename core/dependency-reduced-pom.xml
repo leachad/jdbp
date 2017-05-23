@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.andrewdleach</groupId>
-  <artifactId>com.andrewdleach.jdbp-master</artifactId>
-  <name>com.andrewdleach.jdbp</name>
+  <groupId>com.andrewdleach.jdbp.core</groupId>
+  <artifactId>core</artifactId>
+  <name>Jdbp Core</name>
   <version>0.0.1-SNAPSHOT</version>
   <description>Lightweight database wrapper for jdbc 4 implementations</description>
+  <scm>
+    <connection>scm:git:git://github.com/leachad/jdbp.git</connection>
+    <developerConnection>scm:git:git@github.com:leachad/jdbp.git</developerConnection>
+    <url>https://github.com/leachad/jdbp</url>
+  </scm>
   <build>
     <plugins>
       <plugin>
@@ -14,6 +19,29 @@
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>com.github.github</groupId>
+        <artifactId>site-maven-plugin</artifactId>
+        <version>0.12</version>
+        <executions>
+          <execution>
+            <phase>site</phase>
+            <goals>
+              <goal>site</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <message>Creating Site For ${project.version}</message>
+        </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>2.8.1</version>
+        <configuration>
+          <altDeploymentRepository>internal.repo::default::file://${project.build.directory}/mvn-repo</altDeploymentRepository>
         </configuration>
       </plugin>
       <plugin>
@@ -71,5 +99,15 @@
       </exclusions>
     </dependency>
   </dependencies>
+  <distributionManagement>
+    <repository>
+      <id>internal.repo</id>
+      <name>Temporary Staging Repository</name>
+      <url>file://${project.build.directory}/mvn-repo</url>
+    </repository>
+  </distributionManagement>
+  <properties>
+    <github.global.server>github</github.global.server>
+  </properties>
 </project>
 
