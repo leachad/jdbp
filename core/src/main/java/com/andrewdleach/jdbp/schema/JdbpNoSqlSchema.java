@@ -20,4 +20,9 @@ public class JdbpNoSqlSchema extends AbstractSchema {
 		return executeNoSqlUpdate(destinationTableName, dbInfoCollection, containerClass);
 	}
 
+	public DBInfo findOne(String destinationTableName, Class<? extends DBInfo> containerClass) throws JdbpException {
+		List<DBInfo> dbInfos = executeNoSqlFindTopN(destinationTableName, containerClass, 1);
+		return dbInfos.isEmpty() ? null : dbInfos.get(0);
+	}
+
 }
