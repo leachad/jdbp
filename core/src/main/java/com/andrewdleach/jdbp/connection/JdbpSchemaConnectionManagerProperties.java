@@ -7,10 +7,12 @@ public class JdbpSchemaConnectionManagerProperties {
 	private boolean credentialsNoProperties;
 	private boolean hikariEnablesCredentials;
 	private String userName;
-	private String password;
+	private char[] password;
 	private Properties propertiesInfo;
 	private boolean propertiesNoCredentials;
 	private boolean noPropertiesNoCredentials;
+	private String hostName;
+	private int portNumber;
 
 	public JdbpSchemaConnectionManagerProperties() {}
 
@@ -46,11 +48,11 @@ public class JdbpSchemaConnectionManagerProperties {
 		this.userName = userName;
 	}
 
-	public String getPassword() {
+	public char[] getPassword() {
 		return password;
 	}
 
-	public void setPassword(String password) {
+	public void setPassword(char[] password) {
 		this.password = password;
 	}
 
@@ -76,6 +78,22 @@ public class JdbpSchemaConnectionManagerProperties {
 
 	public void setNoPropertiesNoCredentials(boolean noPropertiesNoCredentials) {
 		this.noPropertiesNoCredentials = noPropertiesNoCredentials;
+	}
+
+	public int getPortNumber() {
+		return portNumber;
+	}
+
+	public void setPortNumber(int portNumber) {
+		this.portNumber = portNumber;
+	}
+
+	public String getHostName() {
+		return hostName;
+	}
+
+	public void setHostName(String hostName) {
+		this.hostName = hostName;
 	}
 
 }

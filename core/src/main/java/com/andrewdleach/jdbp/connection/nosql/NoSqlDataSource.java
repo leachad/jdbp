@@ -1,7 +1,11 @@
 package com.andrewdleach.jdbp.connection.nosql;
 
+import java.util.Arrays;
+
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
+import com.mongodb.MongoCredential;
+import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoDatabase;
 
 public class NoSqlDataSource {
@@ -33,7 +37,14 @@ public class NoSqlDataSource {
 	}
 
 	private void initializeMongoDatasource(NoSqlDataSourceConfig config) {
-		mongoClient = new MongoClient(new MongoClientURI(config.getTargetUrl()));
+		char[] password = config.getPassword();
+		if((password != null && password.length > 0) && (config.getUsername() != null && config.getUsername().length() > 0)) {
+			MongoCredential mongoCredential = MongoCredential.createCredential(config.getUsername(), getSchemaName(), password);
+			mongoClient = new MongoClient(new ServerAddress(config.getHostName(), config.getPortNumber()), Arrays.asList(mongoCredential));
+		}
+		else {
+			mongoClient = new MongoClient(new MongoClientURI(config.getTargetUrl()));
+		}
 	}
 
 	public MongoDatabase getMongoDatabase() {

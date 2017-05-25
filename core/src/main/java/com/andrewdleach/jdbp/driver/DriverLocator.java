@@ -27,6 +27,7 @@ public class DriverLocator {
 	private static final String REQUESTED_DRIVER_NAME = "requestedDriverName";
 	private static final String LOAD_BALANCED = "loadBalanced";
 	private static final String HOST_NAMES = "hostNames";
+	private static final String PORT_NUMBERS = "portNumbers";
 	private static final String SCHEMA_NAMES = "schemaNames";
 	private static final String URL_PARAMS = "urlParams";
 	private static final String USERNAME = "username";
@@ -57,6 +58,10 @@ public class DriverLocator {
 				List<String> hostNames = getHostNames(jdbpProps.getString(key));
 				HostManager.setHostNames(hostNames);
 			}
+			else if(key.equalsIgnoreCase(PORT_NUMBERS)) {
+				List<String> portNumbers = getPortNumbers(jdbpProps.getString(key));
+				HostManager.setPortNumbers(portNumbers);
+			}
 			else if(key.equals(SCHEMA_NAMES)) {
 				List<String> schemaNames = getSchemaNames(jdbpProps.getString(key));
 				SchemaManager.setSchemaNames(schemaNames);
@@ -68,7 +73,7 @@ public class DriverLocator {
 				SchemaManager.setUserName(jdbpProps.getString(key));
 			}
 			else if(key.equals(PASSWORD)) {
-				SchemaManager.setPassword(jdbpProps.getString(key));
+				SchemaManager.setPassword(jdbpProps.getString(key).toCharArray());
 			}
 			else if(key.equals(PROP_DEFINED_STATEMENTS)) {
 				SchemaManager.setPropDefinedStatements(jdbpProps.getString(key));
@@ -129,6 +134,15 @@ public class DriverLocator {
 			hostNames.add(hostName);
 		}
 		return hostNames;
+	}
+
+	private static List<String> getPortNumbers(String portNumbersPropertyString) {
+		String[] portNumberArray = portNumbersPropertyString.split("[,]");
+		List<String> portNumbers = new ArrayList<>();
+		for(String portNumber: portNumberArray) {
+			portNumbers.add(portNumber);
+		}
+		return portNumbers;
 	}
 
 	private static List<String> getSchemaNames(String schemaNamesPropertyString) {

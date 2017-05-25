@@ -15,7 +15,7 @@ import com.andrewdleach.jdbp.driver.DriverStorage;
 import com.andrewdleach.jdbp.exception.JdbpException;
 import com.andrewdleach.jdbp.host.HostManager;
 import com.andrewdleach.jdbp.properties.util.DriverUtil;
-import com.andrewdleach.jdbp.properties.util.SQLUtil;
+import com.andrewdleach.jdbp.properties.util.SqlUtil;
 import com.andrewdleach.jdbp.properties.util.StatementUtil;
 import com.andrewdleach.jdbp.statement.syntax.sproc.JdbpCallableStatement;
 
@@ -28,7 +28,7 @@ public class SchemaManager {
 
 	private static Map<String, String> urlParamArgPairs;
 	private static String userName;
-	private static String password;
+	private static char[] password;
 	private static Properties info;
 	private static boolean loadBalanced;
 	private static boolean propDefinedStatements;
@@ -101,6 +101,8 @@ public class SchemaManager {
 
 		String targetUrl = buildTargetUrlForSchema(schemaName);
 		connectionManagerProperties.setTargetUrl(targetUrl);
+		connectionManagerProperties.setHostName(HostManager.findOneHostName());
+		connectionManagerProperties.setPortNumber(HostManager.findOnePortNumber());
 
 		if(userCredentialsProvided() && !propertiesInfoProvided()) {
 			connectionManagerProperties.setUserName(userName);
@@ -116,7 +118,7 @@ public class SchemaManager {
 		}
 
 		AbstractSchema schema = null;
-		if(SQLUtil.isNoSQLDriver(DriverStorage.getRequestedDriverName())) {
+		if(SqlUtil.isNoSqlDriver(DriverStorage.getRequestedDriverName())) {
 			schema = new JdbpNoSqlSchema(schemaName, DriverStorage.getRequestedDriverName(), connectionManagerProperties);
 		}
 		else {
@@ -155,9 +157,13 @@ public class SchemaManager {
 		targetUrlBuilder.append("//");
 
 		List<String> hostNames = HostManager.getHostNames();
+		List<Integer> portNumbers = HostManager.getPortNumbers();
 		int commaIndex = 0;
+		int hostIndex = 0;
 		for(String hostName: hostNames) {
 			targetUrlBuilder.append(hostName);
+			targetUrlBuilder.append(":");
+			targetUrlBuilder.append(portNumbers.get(hostIndex));
 			if(commaIndex < hostNames.size() - 1) {
 				targetUrlBuilder.append(",");
 				commaIndex++;
@@ -165,6 +171,7 @@ public class SchemaManager {
 			else {
 				targetUrlBuilder.append("/");
 			}
+			hostIndex++;
 		}
 
 		String formattedHostName = targetUrlBuilder.toString();
@@ -220,7 +227,7 @@ public class SchemaManager {
 	/**
 	 * @param password
 	 */
-	public static void setPassword(String password) {
+	public static void setPassword(char[] password) {
 		SchemaManager.password = password;
 	}
 

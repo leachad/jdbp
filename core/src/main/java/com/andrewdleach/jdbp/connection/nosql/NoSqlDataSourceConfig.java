@@ -4,8 +4,10 @@ public class NoSqlDataSourceConfig {
 
 	private String targetUrl;
 	private String username;
-	private String password;
+	private char[] password;
 	private String driver;
+	private String hostName;
+	private int portNumber;
 
 	public String getTargetUrl() {
 		return targetUrl;
@@ -23,11 +25,11 @@ public class NoSqlDataSourceConfig {
 		this.username = username;
 	}
 
-	public String getPassword() {
+	public char[] getPassword() {
 		return password;
 	}
 
-	public void setPassword(String password) {
+	public void setPassword(char[] password) {
 		this.password = password;
 	}
 
@@ -37,6 +39,22 @@ public class NoSqlDataSourceConfig {
 
 	public void setDriver(String driver) {
 		this.driver = driver;
+	}
+
+	public String getHostName() {
+		return hostName;
+	}
+
+	public void setHostName(String hostName) {
+		this.hostName = hostName;
+	}
+
+	public int getPortNumber() {
+		return portNumber;
+	}
+
+	public void setPortNumber(int portNumber) {
+		this.portNumber = portNumber;
 	}
 
 }

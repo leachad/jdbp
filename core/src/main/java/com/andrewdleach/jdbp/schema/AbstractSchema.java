@@ -19,7 +19,7 @@ import com.andrewdleach.jdbp.logger.JdbpLoggerConstants;
 import com.andrewdleach.jdbp.model.DBInfo;
 import com.andrewdleach.jdbp.parser.DBInfoTransposer;
 import com.andrewdleach.jdbp.parser.ResultSetTransposer;
-import com.andrewdleach.jdbp.properties.util.SQLUtil;
+import com.andrewdleach.jdbp.properties.util.SqlUtil;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperationInfo;
 import com.andrewdleach.jdbp.statement.syntax.sproc.JdbpCallableStatement;
 import com.mongodb.client.MongoCollection;
@@ -38,7 +38,7 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 	}
 
 	public void closeDataSource() {
-		if(SQLUtil.isNoSQLDriver(getDriverName())) {
+		if(SqlUtil.isNoSqlDriver(getDriverName())) {
 			closeNoSqlDataSource();
 		}
 		else {
@@ -290,7 +290,7 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 
 	protected List<DBInfo> executeNoSqlGet(String destinationTableName, Class<? extends DBInfo> containerClass) throws JdbpException {
 		List<DBInfo> noSqlDBInfos = new ArrayList<>();
-		if(SQLUtil.isMongoDriver(getDriverName())) {
+		if(SqlUtil.isMongoDriver(getDriverName())) {
 			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
 			MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
 			MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
@@ -301,7 +301,7 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 
 	protected boolean executeNoSqlUpdate(String destinationTableName, List<DBInfo> dbInfos, Class<? extends DBInfo> containerClass) {
 		boolean isSuccess = true;
-		if(SQLUtil.isMongoDriver(getDriverName())) {
+		if(SqlUtil.isMongoDriver(getDriverName())) {
 			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
 			MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
 			MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
@@ -320,7 +320,7 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 
 	protected List<DBInfo> executeNoSqlFindTopN(String destinationTableName, Class<? extends DBInfo> containerClass, int topN) throws JdbpException {
 		List<DBInfo> dbInfos = new ArrayList<>(topN);
-		if(SQLUtil.isMongoDriver(getDriverName())) {
+		if(SqlUtil.isMongoDriver(getDriverName())) {
 			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
 			MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
 			MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);

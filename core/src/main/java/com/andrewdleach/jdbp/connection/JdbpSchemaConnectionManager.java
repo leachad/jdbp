@@ -6,7 +6,7 @@ import java.sql.SQLException;
 import com.andrewdleach.jdbp.connection.nosql.NoSqlDataSource;
 import com.andrewdleach.jdbp.connection.nosql.NoSqlDataSourceConfig;
 import com.andrewdleach.jdbp.exception.JdbpException;
-import com.andrewdleach.jdbp.properties.util.SQLUtil;
+import com.andrewdleach.jdbp.properties.util.SqlUtil;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
@@ -27,7 +27,7 @@ public class JdbpSchemaConnectionManager {
 	public JdbpSchemaConnectionManager(String schemaName, String driverName, JdbpSchemaConnectionManagerProperties connectionManagerProperties) {
 		this.connectionManagerProperties = connectionManagerProperties;
 		this.driverName = driverName;
-		if(SQLUtil.isNoSQLDriver(driverName)) {
+		if(SqlUtil.isNoSqlDriver(driverName)) {
 			initializeNoSqlDataSource(schemaName, driverName);
 		}
 		else {
@@ -63,7 +63,8 @@ public class JdbpSchemaConnectionManager {
 		Connection connection = null;
 		try {
 			if(isCredentialsNoProperties() && isHikariEnablesCredentials()) {
-				connection = getHikariDataSource().getConnection(getUsername(), getPassword());
+				char[] password = getPassword();
+				connection = getHikariDataSource().getConnection(getUsername(), new String(password));
 			}
 			else {
 				connection = getHikariDataSource().getConnection();
@@ -80,7 +81,8 @@ public class JdbpSchemaConnectionManager {
 		config.setJdbcUrl(getTargetUrl());
 		if(isCredentialsNoProperties()) {
 			config.setUsername(getUsername());
-			config.setPassword(getPassword());
+			char[] password = getPassword();
+			config.setPassword(new String(password));
 		}
 
 		hikariDataSource = new HikariDataSource(config);
@@ -90,6 +92,8 @@ public class JdbpSchemaConnectionManager {
 		NoSqlDataSourceConfig config = new NoSqlDataSourceConfig();
 		config.setTargetUrl(getTargetUrl());
 		config.setDriver(driverName);
+		config.setHostName(getHostName());
+		config.setPortNumber(getPortNumber());
 		if(isCredentialsNoProperties()) {
 			config.setUsername(getUsername());
 			config.setPassword(getPassword());
@@ -101,7 +105,7 @@ public class JdbpSchemaConnectionManager {
 		return connectionManagerProperties.getTargetUrl();
 	}
 
-	private String getPassword() {
+	private char[] getPassword() {
 		return connectionManagerProperties.getPassword();
 	}
 
@@ -115,6 +119,14 @@ public class JdbpSchemaConnectionManager {
 
 	private boolean isCredentialsNoProperties() {
 		return connectionManagerProperties.isCredentialsNoProperties();
+	}
+
+	private String getHostName() {
+		return connectionManagerProperties.getHostName();
+	}
+
+	private int getPortNumber() {
+		return connectionManagerProperties.getPortNumber();
 	}
 
 	private HikariDataSource getHikariDataSource() {
