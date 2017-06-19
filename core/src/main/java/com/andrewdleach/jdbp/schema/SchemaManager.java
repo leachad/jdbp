@@ -180,14 +180,16 @@ public class SchemaManager {
 		}
 		targetUrlBuilder.append(schemaName);
 
-		targetUrlBuilder.append("?");
-		int argIndex = 1;
-		for(Entry<String, String> paramArgPair: urlParamArgPairs.entrySet()) {
-			targetUrlBuilder.append(paramArgPair.getKey() + "=" + paramArgPair.getValue());
-			if(argIndex >= 1 && argIndex < urlParamArgPairs.size() && argIndex != urlParamArgPairs.size()) {
-				targetUrlBuilder.append("&");
+		if(urlParamArgPairs != null && urlParamArgPairs.size() > 0) {
+			targetUrlBuilder.append("?");
+			int argIndex = 1;
+			for(Entry<String, String> paramArgPair: urlParamArgPairs.entrySet()) {
+				targetUrlBuilder.append(paramArgPair.getKey() + "=" + paramArgPair.getValue());
+				if(argIndex >= 1 && argIndex < urlParamArgPairs.size() && argIndex != urlParamArgPairs.size()) {
+					targetUrlBuilder.append("&");
+				}
+				argIndex++;
 			}
-			argIndex++;
 		}
 
 		return targetUrlBuilder.toString();
@@ -209,11 +211,13 @@ public class SchemaManager {
 	 * @param urlParams
 	 */
 	public static void setUrlParams(String urlParams) {
-		String[] urlParamArray = urlParams.split("[,]");
-		urlParamArgPairs = new HashMap<>();
-		for(String urlParamArgPair: urlParamArray) {
-			String[] splitPair = urlParamArgPair.split("[=]");
-			urlParamArgPairs.put(splitPair[0], splitPair[1]);
+		if(urlParams != null && urlParams.length() > 0) {
+			String[] urlParamArray = urlParams.split("[,]");
+			urlParamArgPairs = new HashMap<>();
+			for(String urlParamArgPair: urlParamArray) {
+				String[] splitPair = urlParamArgPair.split("[=]");
+				urlParamArgPairs.put(splitPair[0], splitPair[1]);
+			}
 		}
 	}
 
