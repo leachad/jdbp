@@ -2,7 +2,6 @@ package com.andrewdleach.jdbp.properties.util;
 
 import com.andrewdleach.jdbp.connection.nosql.NoSqlConstants;
 import com.andrewdleach.jdbp.connection.sql.SqlConstants;
-import com.andrewdleach.jdbp.driver.DriverStorage;
 
 public class SqlUtil {
 
@@ -34,13 +33,12 @@ public class SqlUtil {
 		return NoSqlConstants.HBASE.toLowerCase().equals(requestedDriverName.toLowerCase());
 	}
 
-	public static int findDefaultPortNumberForDriver() {
-		String requestedDriverName = DriverStorage.getRequestedDriverName();
-		if(isNoSqlDriver(requestedDriverName)) {
-			return findNoSQLPortNumber(requestedDriverName);
+	public static int findDefaultPortNumberForDriver(String driverName) {
+		if(isNoSqlDriver(driverName)) {
+			return findNoSQLPortNumber(driverName);
 		}
 		else {
-			return findSqlPortNumber(requestedDriverName);
+			return findSqlPortNumber(driverName);
 		}
 	}
 

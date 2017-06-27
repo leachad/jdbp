@@ -39,14 +39,14 @@ public class DBInfoTransposer {
 	 * @return
 	 * @throws JdbpException
 	 */
-	public static String constructSQLUpdateString(String schemaName, String destinationTable, CrudOperationInfo crudOperationInfo, List<DBInfo> infosToConvert) throws JdbpException {
+	public static String constructSQLUpdateString(String schemaName, String destinationTable, CrudOperationInfo crudOperationInfo, List<DBInfo> infosToConvert, String requestedDriverName) throws JdbpException {
 		String sqlString = null;
 		switch(crudOperationInfo.getCrudOperation()) {
 			case UPDATE:
-				sqlString = buildUpdateSQLString(schemaName, destinationTable, crudOperationInfo, infosToConvert);
+				sqlString = buildUpdateSQLString(schemaName, destinationTable, crudOperationInfo, infosToConvert, requestedDriverName);
 				break;
 			case INSERT:
-				sqlString = buildInsertSQLString(schemaName, destinationTable, crudOperationInfo, infosToConvert);
+				sqlString = buildInsertSQLString(schemaName, destinationTable, crudOperationInfo, infosToConvert, requestedDriverName);
 				break;
 			default:
 				break;
@@ -62,15 +62,15 @@ public class DBInfoTransposer {
 	 * @param containerClass
 	 * @return
 	 */
-	public static String constructSQLQueryString(String schemaName, String destinationTable, CrudOperationInfo crudOperationInfo, Class<? extends DBInfo> containerClass) {
+	public static String constructSQLQueryString(String schemaName, String destinationTable, CrudOperationInfo crudOperationInfo, Class<? extends DBInfo> containerClass, String requestedDriverName) {
 		String sqlString = null;
 		if(crudOperationInfo.getCrudOperation().equals(CrudOperation.SELECT)) {
-			sqlString = buildSelectSQLString(schemaName, destinationTable, crudOperationInfo, containerClass);
+			sqlString = buildSelectSQLString(schemaName, destinationTable, crudOperationInfo, containerClass, requestedDriverName);
 		}
 		return sqlString;
 	}
 
-	private static String buildUpdateSQLString(String schemaName, String destinationTable, CrudOperationInfo crudOperationInfo, List<DBInfo> infosToConvert) {
+	private static String buildUpdateSQLString(String schemaName, String destinationTable, CrudOperationInfo crudOperationInfo, List<DBInfo> infosToConvert, String requestedDriverName) {
 		CrudDelimiter sequenceDelimiter = CrudDelimiter.COMMA;
 
 		DBInfo infoToConvert = infosToConvert.get(0);
@@ -96,10 +96,10 @@ public class DBInfoTransposer {
 		StringBuilder clauseForUpdateStatement = new StringBuilder();
 
 		// TODO Factor in clause creation logic
-		return CrudStatementManager.buildUpdateSQLStatement(schemaName, destinationTable, columnNamesToReplaceInTemplate.toString(), columnValuesToReplaceInTemplate.toString(), clauseForUpdateStatement.toString());
+		return CrudStatementManager.buildUpdateSQLStatement(schemaName, destinationTable, columnNamesToReplaceInTemplate.toString(), columnValuesToReplaceInTemplate.toString(), clauseForUpdateStatement.toString(), requestedDriverName);
 	}
 
-	private static String buildInsertSQLString(String schemaName, String destinationTable, CrudOperationInfo crudOperationInfo, List<DBInfo> infosToConvert) {
+	private static String buildInsertSQLString(String schemaName, String destinationTable, CrudOperationInfo crudOperationInfo, List<DBInfo> infosToConvert, String requestedDriverName) {
 		CrudDelimiter sequenceDelimiter = CrudDelimiter.COMMA;
 
 		DBInfo infoToConvert = infosToConvert.get(0);
@@ -129,10 +129,10 @@ public class DBInfoTransposer {
 		}
 
 		// TODO Factor in clause creation logic
-		return CrudStatementManager.buildInsertSQLStatement(schemaName, destinationTable, columnNamesToReplaceInTemplate.toString(), columnValuesToReplaceInTemplate.toString());
+		return CrudStatementManager.buildInsertSQLStatement(schemaName, destinationTable, columnNamesToReplaceInTemplate.toString(), columnValuesToReplaceInTemplate.toString(), requestedDriverName);
 	}
 
-	private static String buildSelectSQLString(String schemaName, String destinationTable, CrudOperationInfo crudOperationInfo, Class<? extends DBInfo> containerClass) {
+	private static String buildSelectSQLString(String schemaName, String destinationTable, CrudOperationInfo crudOperationInfo, Class<? extends DBInfo> containerClass, String requestedDriverName) {
 		CrudDelimiter sequenceDelimiter = CrudDelimiter.COMMA;
 
 		Field[] fieldsToSelect = containerClass.getDeclaredFields();
@@ -172,7 +172,7 @@ public class DBInfoTransposer {
 			}
 		}
 
-		return CrudStatementManager.buildSelectSQLStatement(schemaName, destinationTable, columnNamesToReplaceInTemplate.toString(), clauseForSelectStatement.toString());
+		return CrudStatementManager.buildSelectSQLStatement(schemaName, destinationTable, columnNamesToReplaceInTemplate.toString(), clauseForSelectStatement.toString(), requestedDriverName);
 	}
 
 	private static int findEquivalentColumnNameIndex(List<String> convertedFieldNames, String columnName) {

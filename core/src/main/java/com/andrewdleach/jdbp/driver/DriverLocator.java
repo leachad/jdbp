@@ -5,15 +5,16 @@ package com.andrewdleach.jdbp.driver;
 
 import java.sql.Driver;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.ServiceLoader;
 import java.util.Set;
 
-import com.andrewdleach.jdbp.host.HostManager;
-import com.andrewdleach.jdbp.schema.SchemaManager;
+import com.andrewdleach.jdbp.properties.info.DriverPropertiesInfo;
 
 /**
  * Utility to obtain the com.andrewdleach.jdbp.driver in the classpath, check if it is compatible against the predefined list of drivers and register
@@ -34,57 +35,90 @@ public class DriverLocator {
 	private static final String PASSWORD = "password";
 	private static final String PROP_DEFINED_STATEMENTS = "propDefinedStatements";
 	private static final String DB_DEFINED_STATEMENTS = "dbDefinedStatements";
-
-	private static Driver driver = null;
+	
+	private static Map<String, DriverPropertiesInfo> definedDriverMap = new HashMap<>();
 
 	protected DriverLocator() {}
 
 	/**
 	 * Find the appropriate jdbc com.andrewdleach.jdbp.driver based on property files and availability in the classpath
 	 */
-	public static void findJdbcDriver() {
+	public static void findJdbcDrivers() {
 		ResourceBundle jdbpProps = ResourceBundle.getBundle("resources.jdbp", Locale.getDefault());
 		Set<String> keySet = jdbpProps.keySet();
 		for(String key: keySet) {
-			if(key.equals(REQUESTED_DRIVER_NAME)) {
-				String requestedDriverName = jdbpProps.getString(key);
-				driver = DriverLocator.locateDriver(requestedDriverName);
-				DriverStorage.setRequestedDriverName(requestedDriverName);
+			String driverProperties = jdbpProps.getString(key);
+			String[] driverAndProperty = key.split("[.]");
+			String driverName = driverAndProperty[0];
+			String propertyName = driverAndProperty[1];
+			addDriverPropertyToDriverMap(driverName, propertyName, driverProperties);
+		}	
+	}
+	
+	public static Map<String, DriverPropertiesInfo> getDefinedDriverMap() {
+		return definedDriverMap;
+	}
+
+	private static void addDriverPropertyToDriverMap(String driverName, String propertyName, String driverProperties) {
+			DriverPropertiesInfo driverInfo = definedDriverMap.get(driverName);
+			if (driverInfo == null) {
+				driverInfo = new DriverPropertiesInfo();
+				definedDriverMap.put(driverName, driverInfo);
 			}
-			else if(key.equals(LOAD_BALANCED)) {
-				SchemaManager.setLoadBalanced(jdbpProps.getString(key));
+			if(propertyName.equals(REQUESTED_DRIVER_NAME)) {
+				driverInfo.setRequestedDriverName(driverProperties);
+				Driver driver = DriverLocator.locateDriver(driverProperties);
+				driverInfo.setDriver(driver);
 			}
-			else if(key.equals(HOST_NAMES)) {
-				List<String> hostNames = getHostNames(jdbpProps.getString(key));
-				HostManager.setHostNames(hostNames);
+			else if(propertyName.equals(LOAD_BALANCED)) {
+				driverInfo.setLoadBalanced(Boolean.getBoolean(driverProperties) ? Boolean.getBoolean(driverProperties) : false);
 			}
-			else if(key.equalsIgnoreCase(PORT_NUMBERS)) {
-				List<String> portNumbers = getPortNumbers(jdbpProps.getString(key));
-				HostManager.setPortNumbers(portNumbers);
+			else if(propertyName.equals(HOST_NAMES)) {
+				List<String> hostNames = getHostNames(driverProperties);
+				driverInfo.setHostNames(hostNames);
 			}
-			else if(key.equals(SCHEMA_NAMES)) {
-				List<String> schemaNames = getSchemaNames(jdbpProps.getString(key));
-				SchemaManager.setSchemaNames(schemaNames);
+			else if(propertyName.equalsIgnoreCase(PORT_NUMBERS)) {
+				driverInfo.setPortNumbers(getPortNumbers(driverProperties));
 			}
-			else if(key.equals(URL_PARAMS)) {
-				SchemaManager.setUrlParams(jdbpProps.getString(key));
+			else if(propertyName.equals(SCHEMA_NAMES)) {
+				driverInfo.setSchemaNames(getSchemaNames(driverProperties));
 			}
-			else if(key.equals(USERNAME)) {
-				SchemaManager.setUserName(jdbpProps.getString(key));
+			else if(propertyName.equals(URL_PARAMS)) {
+				driverInfo.setUrlParams(getUrlParams(driverProperties));
 			}
-			else if(key.equals(PASSWORD)) {
-				SchemaManager.setPassword(jdbpProps.getString(key).toCharArray());
+			else if(propertyName.equals(USERNAME)) {
+				driverInfo.setUserName(driverProperties);
 			}
-			else if(key.equals(PROP_DEFINED_STATEMENTS)) {
-				SchemaManager.setPropDefinedStatements(jdbpProps.getString(key));
+			else if(propertyName.equals(PASSWORD)) {
+				driverInfo.setPassword(driverProperties.toCharArray());
 			}
-			else if(key.equals(DB_DEFINED_STATEMENTS)) {
-				SchemaManager.setDbDefinedStatements(jdbpProps.getString(key));
+			else if(propertyName.equals(PROP_DEFINED_STATEMENTS)) {
+				driverInfo.setPropDefinedStatements(Boolean.getBoolean(driverProperties));
 			}
+			else if(propertyName.equals(DB_DEFINED_STATEMENTS)) {
+				driverInfo.setDbDefinedStatements(Boolean.getBoolean(driverProperties));
+			}
+		
+		if(driverInfo.getDriver() == null) {
+			Driver driver = DriverLocator.locateDriver();
+			driverInfo.setDriver(driver);
 		}
-		if(driver == null) {
-			driver = DriverLocator.locateDriver();
+	}
+	
+	/**
+	 * @param urlParams
+	 */
+	public static Map<String, String> getUrlParams(String urlParams) {
+		if(urlParams != null && urlParams.length() > 0) {
+			String[] urlParamArray = urlParams.split("[,]");
+			Map<String, String> urlParamArgPairs = new HashMap<>();
+			for(String urlParamArgPair: urlParamArray) {
+				String[] splitPair = urlParamArgPair.split("[=]");
+				urlParamArgPairs.put(splitPair[0], splitPair[1]);
+			}
+			return urlParamArgPairs;
 		}
+		return null;
 	}
 
 	/**
@@ -136,11 +170,11 @@ public class DriverLocator {
 		return hostNames;
 	}
 
-	private static List<String> getPortNumbers(String portNumbersPropertyString) {
+	private static List<Integer> getPortNumbers(String portNumbersPropertyString) {
 		String[] portNumberArray = portNumbersPropertyString.split("[,]");
-		List<String> portNumbers = new ArrayList<>();
+		List<Integer> portNumbers = new ArrayList<>();
 		for(String portNumber: portNumberArray) {
-			portNumbers.add(portNumber);
+			portNumbers.add(Integer.parseInt(portNumber));
 		}
 		return portNumbers;
 	}

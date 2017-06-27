@@ -8,12 +8,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 
 import com.andrewdleach.jdbp.connection.JdbpSchemaConnectionManagerProperties;
-import com.andrewdleach.jdbp.driver.DriverStorage;
+import com.andrewdleach.jdbp.driver.DriverLocator;
 import com.andrewdleach.jdbp.exception.JdbpException;
-import com.andrewdleach.jdbp.host.HostManager;
+import com.andrewdleach.jdbp.host.HostUtil;
+import com.andrewdleach.jdbp.properties.info.DriverPropertiesInfo;
 import com.andrewdleach.jdbp.properties.util.DriverUtil;
 import com.andrewdleach.jdbp.properties.util.SqlUtil;
 import com.andrewdleach.jdbp.properties.util.StatementUtil;
@@ -24,15 +24,7 @@ import com.andrewdleach.jdbp.statement.syntax.sproc.JdbpCallableStatement;
  */
 public class SchemaManager {
 	private static Map<String, AbstractSchema> schemaMap = new HashMap<>();
-	private static List<String> schemaNames = new ArrayList<>();
 
-	private static Map<String, String> urlParamArgPairs;
-	private static String userName;
-	private static char[] password;
-	private static Properties info;
-	private static boolean loadBalanced;
-	private static boolean propDefinedStatements;
-	private static boolean dbDefinedStatements;
 
 	public SchemaManager() {
 		throw new UnsupportedOperationException();
@@ -55,25 +47,21 @@ public class SchemaManager {
 		return dbInstance;
 	}
 
-	/**
-	 * Stores the schemaNames obtained from props
-	 * 
-	 * @param schemaNames
-	 */
-	public static void setSchemaNames(List<String> schemaNames) {
-		SchemaManager.schemaNames.addAll(schemaNames);
-	}
+
 
 	/**
-	 * Creat Schemas for names obtained from user defined properties file
+	 * Create Schemas for names obtained from user defined properties file
 	 * 
 	 * @throws JdbpException
 	 */
 	public static void createAllSchemasFromProperties() throws JdbpException {
-		if(schemaNames != null) {
-			for(String schemaName: schemaNames) {
-				AbstractSchema dbInstance = buildJdbpSchemaFromProperties(schemaName);
-				schemaMap.put(schemaName, dbInstance);
+		Map<String, DriverPropertiesInfo> definedDriverMap = DriverLocator.getDefinedDriverMap();
+		if(definedDriverMap != null) {
+			for (Map.Entry<String, DriverPropertiesInfo> driverPropertiesEntry: definedDriverMap.entrySet()) {
+				for (String schemaName : driverPropertiesEntry.getValue().getSchemaNames()) {
+					AbstractSchema dbInstance = buildJdbpSchemaFromProperties(schemaName, driverPropertiesEntry.getValue());
+					schemaMap.put(schemaName, dbInstance);
+				}
 			}
 		}
 	}
@@ -85,12 +73,28 @@ public class SchemaManager {
 		}
 	}
 
+	private static AbstractSchema buildJdbpSchemaFromProperties(String schemaName) throws JdbpException {
+		Map<String, DriverPropertiesInfo> driverMap = DriverLocator.getDefinedDriverMap();
+		DriverPropertiesInfo driverPropertiesInfo = null;
+		for (Map.Entry<String, DriverPropertiesInfo> driverPropertiesEntry: driverMap.entrySet()) {
+			List<String> schemaNames = driverPropertiesEntry.getValue().getSchemaNames();
+			if (schemaNames.contains(schemaName)) {
+				driverPropertiesInfo = driverPropertiesEntry.getValue();
+				break;
+			}
+		}
+		if (driverPropertiesInfo != null) {
+			return buildJdbpSchemaFromProperties(driverPropertiesInfo.getRequestedDriverName(), driverPropertiesInfo);
+		}
+		return null;
+	}
 	/**
 	 * @param schemaName
+	 * @param driverPropertiesInfo 
 	 * @return a fully built schemaContainer
 	 */
-	private static AbstractSchema buildJdbpSchemaFromProperties(String schemaName) throws JdbpException {
-		if(HostManager.getHostNames() == null) {
+	private static AbstractSchema buildJdbpSchemaFromProperties(String schemaName, DriverPropertiesInfo driverPropertiesInfo) throws JdbpException {
+		if(driverPropertiesInfo.getHostNames() == null) {
 			JdbpException.throwException("database hostName cannot be null");
 		}
 		if(schemaName == null) {
@@ -98,66 +102,62 @@ public class SchemaManager {
 		}
 
 		JdbpSchemaConnectionManagerProperties connectionManagerProperties = new JdbpSchemaConnectionManagerProperties();
-
-		String targetUrl = buildTargetUrlForSchema(schemaName);
+		String targetUrl = buildTargetUrlForSchema(driverPropertiesInfo);
 		connectionManagerProperties.setTargetUrl(targetUrl);
-		connectionManagerProperties.setHostName(HostManager.findOneHostName());
-		connectionManagerProperties.setPortNumber(HostManager.findOnePortNumber());
+		connectionManagerProperties.setHostName(HostUtil.findOneHostName(driverPropertiesInfo.getHostNames()));
+		connectionManagerProperties.setPortNumber(HostUtil.findOnePortNumber(driverPropertiesInfo.getPortNumbers(), driverPropertiesInfo.getRequestedDriverName()));
 
-		if(userCredentialsProvided() && !propertiesInfoProvided()) {
-			connectionManagerProperties.setUserName(userName);
-			connectionManagerProperties.setPassword(password);
+		if(userCredentialsProvided(driverPropertiesInfo)) {
+			connectionManagerProperties.setUserName(driverPropertiesInfo.getUserName());
+			connectionManagerProperties.setPassword(driverPropertiesInfo.getPassword());
 			connectionManagerProperties.setCredentialsNoProperties(true);
 		}
-		else if(!userCredentialsProvided() && propertiesInfoProvided()) {
-			connectionManagerProperties.setPropertiesInfo(info);
+		else if(!userCredentialsProvided(driverPropertiesInfo) && propertiesInfoProvided(driverPropertiesInfo)) {
+			connectionManagerProperties.setPropertiesInfo(driverPropertiesInfo.getJavaProperties());
 			connectionManagerProperties.setPropertiesNoCredentials(true);
 		}
-		else if(!userCredentialsProvided() && !propertiesInfoProvided()) {
+		else if(!userCredentialsProvided(driverPropertiesInfo) && !propertiesInfoProvided(driverPropertiesInfo)) {
 			connectionManagerProperties.setNoPropertiesNoCredentials(true);
 		}
 
 		AbstractSchema schema = null;
-		if(SqlUtil.isNoSqlDriver(DriverStorage.getRequestedDriverName())) {
-			schema = new JdbpNoSqlSchema(schemaName, DriverStorage.getRequestedDriverName(), connectionManagerProperties);
+		if(SqlUtil.isNoSqlDriver(driverPropertiesInfo.getRequestedDriverName())) {
+			schema = new JdbpNoSqlSchema(schemaName, driverPropertiesInfo.getRequestedDriverName(), connectionManagerProperties);
 		}
 		else {
-			schema = new JdbpSchema(schemaName, DriverStorage.getRequestedDriverName(), connectionManagerProperties);
+			schema = new JdbpSchema(schemaName, driverPropertiesInfo.getRequestedDriverName(), connectionManagerProperties);
 		}
 
-		if(propDefinedStatements || dbDefinedStatements) {
+		if(driverPropertiesInfo.isPropDefinedStatements() || driverPropertiesInfo.isDbDefinedStatements()) {
 
-		}
-
-		if(propDefinedStatements || dbDefinedStatements) {
 			List<JdbpCallableStatement> statements = null;
-			if(propDefinedStatements) {
+			if(driverPropertiesInfo.isPropDefinedStatements()) {
 				statements = StatementUtil.constructStatementContainersWithResourceBundle(schemaName);
 			}
-			else {
+			else if (driverPropertiesInfo.isDbDefinedStatements()){
 				statements = StatementUtil.constructStatementContainersWithClientTable();
 			}
 			if(statements != null && statements.size() > 0) {
-				schema.setAvailableStatements(statements);
+				// TODO schema.setAvailableStatements(statements);
 			}
 		}
 
 		return schema;
 	}
 
-	private static String buildTargetUrlForSchema(String schemaName) {
+	private static String buildTargetUrlForSchema(DriverPropertiesInfo driverPropertiesInfo) {
 		StringBuilder targetUrlBuilder = new StringBuilder();
-		String requestedDriverName = DriverStorage.getRequestedDriverName();
+		String requestedDriverName = driverPropertiesInfo.getRequestedDriverName();
 		String connectionString = DriverUtil.getDriverClassFlagForDriverName(requestedDriverName);
-		if(loadBalanced && DriverUtil.isLoadBalancedSupportedForDriverName(requestedDriverName)) {
+		if(driverPropertiesInfo.isLoadBalanced() && DriverUtil.isLoadBalancedSupportedForDriverName(requestedDriverName)) {
 			connectionString = connectionString + DriverUtil.getLoadBalancedFlagForDriverName(requestedDriverName);
 		}
 		// TODO add in additional cases for replication, etc...
 		targetUrlBuilder.append(connectionString);
 		targetUrlBuilder.append("//");
 
-		List<String> hostNames = HostManager.getHostNames();
-		List<Integer> portNumbers = HostManager.getPortNumbers();
+		List<String> hostNames = driverPropertiesInfo.getHostNames();
+		List<Integer> portNumbers = driverPropertiesInfo.getPortNumbers();
 		int commaIndex = 0;
 		int hostIndex = 0;
 		for(String hostName: hostNames) {
@@ -178,14 +178,14 @@ public class SchemaManager {
 		if(formattedHostName.charAt(formattedHostName.length() - 1) != 0x2F) {
 			targetUrlBuilder.append("/");
 		}
-		targetUrlBuilder.append(schemaName);
+		targetUrlBuilder.append(driverPropertiesInfo);
 
-		if(urlParamArgPairs != null && urlParamArgPairs.size() > 0) {
+		if(driverPropertiesInfo.getUrlParams() != null && driverPropertiesInfo.getUrlParams().size() > 0) {
 			targetUrlBuilder.append("?");
 			int argIndex = 1;
-			for(Entry<String, String> paramArgPair: urlParamArgPairs.entrySet()) {
+			for(Entry<String, String> paramArgPair: driverPropertiesInfo.getUrlParams().entrySet()) {
 				targetUrlBuilder.append(paramArgPair.getKey() + "=" + paramArgPair.getValue());
-				if(argIndex >= 1 && argIndex < urlParamArgPairs.size() && argIndex != urlParamArgPairs.size()) {
+				if(argIndex >= 1 && argIndex < driverPropertiesInfo.getUrlParams().size() && argIndex != driverPropertiesInfo.getUrlParams().size()) {
 					targetUrlBuilder.append("&");
 				}
 				argIndex++;
@@ -199,58 +199,12 @@ public class SchemaManager {
 		return new ArrayList<>(schemaMap.values());
 	}
 
-	private static boolean userCredentialsProvided() {
-		return userName != null && password != null;
+	private static boolean userCredentialsProvided(DriverPropertiesInfo driverPropertiesInfo) {
+		return driverPropertiesInfo.getUserName() != null && driverPropertiesInfo.getPassword() != null;
 	}
 
-	private static boolean propertiesInfoProvided() {
-		return info != null;
+	private static boolean propertiesInfoProvided(DriverPropertiesInfo driverPropertiesInfo) {
+		return driverPropertiesInfo.getJavaProperties() != null;
 	}
 
-	/**
-	 * @param urlParams
-	 */
-	public static void setUrlParams(String urlParams) {
-		if(urlParams != null && urlParams.length() > 0) {
-			String[] urlParamArray = urlParams.split("[,]");
-			urlParamArgPairs = new HashMap<>();
-			for(String urlParamArgPair: urlParamArray) {
-				String[] splitPair = urlParamArgPair.split("[=]");
-				urlParamArgPairs.put(splitPair[0], splitPair[1]);
-			}
-		}
-	}
-
-	/**
-	 * @param userName
-	 */
-	public static void setUserName(String userName) {
-		SchemaManager.userName = userName;
-	}
-
-	/**
-	 * @param password
-	 */
-	public static void setPassword(char[] password) {
-		SchemaManager.password = password;
-	}
-
-	public static void setLoadBalanced(String isLoadBalanced) {
-		if(Boolean.getBoolean(isLoadBalanced)) {
-			SchemaManager.loadBalanced = Boolean.getBoolean(isLoadBalanced);
-		}
-	}
-
-	public static void setPropDefinedStatements(String propDefinedStatements) {
-		if(Boolean.getBoolean(propDefinedStatements)) {
-			SchemaManager.propDefinedStatements = Boolean.getBoolean(propDefinedStatements);
-		}
-
-	}
-
-	public static void setDbDefinedStatements(String dbDefinedStatements) {
-		if(Boolean.getBoolean(dbDefinedStatements)) {
-			SchemaManager.dbDefinedStatements = Boolean.getBoolean(dbDefinedStatements);
-		}
-	}
 }

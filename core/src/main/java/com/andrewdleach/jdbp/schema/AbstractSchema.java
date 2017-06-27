@@ -31,8 +31,6 @@ import com.mongodb.client.MongoDatabase;
  */
 public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 
-	private List<JdbpCallableStatement> statements;
-
 	protected AbstractSchema(String schemaName, String driverName, JdbpSchemaConnectionManagerProperties connectionManagerProperties) {
 		super(schemaName, driverName, connectionManagerProperties);
 	}
@@ -110,7 +108,7 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 		Connection pooledConnection = getConnection();
 		PreparedStatement preparedUpdateStatement = null;
 		try {
-			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLUpdateString(getSchemaName(), destinationTable, crudOperationInfo, infosToUpdate);
+			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLUpdateString(getSchemaName(), destinationTable, crudOperationInfo, infosToUpdate, getDriverName());
 			preparedUpdateStatement = pooledConnection.prepareStatement(infosStringToUpdateUnsanitized);
 			int result = preparedUpdateStatement.executeUpdate();
 			isSuccess = result == 1 ? true : false;
@@ -161,7 +159,7 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 		Connection pooledConnection = getConnection();
 		PreparedStatement preparedQueryStatement = null;
 		try {
-			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLQueryString(getSchemaName(), destinationTableName, crudOperationInfo, containerClass);
+			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLQueryString(getSchemaName(), destinationTableName, crudOperationInfo, containerClass, getDriverName());
 			preparedQueryStatement = pooledConnection.prepareStatement(infosStringToUpdateUnsanitized);
 			resultSet = preparedQueryStatement.executeQuery();
 			dbInfos = ResultSetTransposer.transposeResultSet(resultSet, containerClass);
@@ -329,8 +327,5 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 		return dbInfos.isEmpty() ? dbInfos : dbInfos.subList(0, topN);
 	}
 
-	public void setAvailableStatements(List<JdbpCallableStatement> statements) {
-		this.statements = statements;
-	}
 
 }

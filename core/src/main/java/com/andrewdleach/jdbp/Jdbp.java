@@ -20,7 +20,7 @@ public class Jdbp {
 	private static Jdbp jdbp = null;
 
 	private Jdbp() throws JdbpException {
-		DriverLocator.findJdbcDriver();
+		DriverLocator.findJdbcDrivers();
 		PropertySetManager.loadAllProperties();
 		SchemaManager.createAllSchemasFromProperties();
 	}

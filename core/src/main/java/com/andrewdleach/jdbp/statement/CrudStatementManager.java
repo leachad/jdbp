@@ -3,7 +3,6 @@
  */
 package com.andrewdleach.jdbp.statement;
 
-import com.andrewdleach.jdbp.driver.DriverStorage;
 import com.andrewdleach.jdbp.properties.util.DriverUtil;
 import com.andrewdleach.jdbp.properties.util.SyntaxUtil;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudClause;
@@ -20,11 +19,11 @@ public class CrudStatementManager {
 	/**
 	 * @param schemaName
 	 * @param destinationTable
+	 * @param requestedDriverName2 
 	 * @param infosToConvert
 	 * @return
 	 */
-	public static String buildInsertSQLStatement(String schemaName, String destinationTable, String columnValuesToUpdate, String valueTuplesToInsert) {
-		String requestedDriverName = DriverStorage.getRequestedDriverName();
+	public static String buildInsertSQLStatement(String schemaName, String destinationTable, String columnValuesToUpdate, String valueTuplesToInsert, String requestedDriverName) {
 		InsertStatement insertStatement = SyntaxUtil.getSyntacticInsertStatement(requestedDriverName);
 		String insertStatementTemplate = insertStatement.getStatementTemplate();
 		insertStatementTemplate = insertStatementTemplate.replaceFirst(CrudDynamicValueKey.SCHEMA_NAME.getDynamicValueKey(), schemaName);
@@ -40,8 +39,7 @@ public class CrudStatementManager {
 		return insertStatementTemplate;
 	}
 
-	public static String buildSelectSQLStatement(String schemaName, String destinationTable, String columnValuesToUpdate, String clauseToRestrictResults) {
-		String requestedDriverName = DriverStorage.getRequestedDriverName();
+	public static String buildSelectSQLStatement(String schemaName, String destinationTable, String columnValuesToUpdate, String clauseToRestrictResults, String requestedDriverName) {
 		SelectStatement selectStatement = SyntaxUtil.getSyntacticSelectStatement(requestedDriverName);
 		String selectStatementTemplate = selectStatement.getStatementTemplate();
 
@@ -75,7 +73,7 @@ public class CrudStatementManager {
 		return selectStatementTemplate;
 	}
 
-	public static String buildUpdateSQLStatement(String schemaName, String destinationTable, String columnValuesToUpdate, String valueTuplesToInsert, String clauseToRestrictResults) {
+	public static String buildUpdateSQLStatement(String schemaName, String destinationTable, String columnValuesToUpdate, String valueTuplesToInsert, String clauseToRestrictResults, String requestedDriverName) {
 		// TODO Auto-generated method stub
 		return null;
 	}
