@@ -102,7 +102,7 @@ public class SchemaManager {
 		}
 
 		JdbpSchemaConnectionManagerProperties connectionManagerProperties = new JdbpSchemaConnectionManagerProperties();
-		String targetUrl = buildTargetUrlForSchema(driverPropertiesInfo);
+		String targetUrl = buildTargetUrlForSchema(driverPropertiesInfo, schemaName);
 		connectionManagerProperties.setTargetUrl(targetUrl);
 		connectionManagerProperties.setHostName(HostUtil.findOneHostName(driverPropertiesInfo.getHostNames()));
 		connectionManagerProperties.setPortNumber(HostUtil.findOnePortNumber(driverPropertiesInfo.getPortNumbers(), driverPropertiesInfo.getRequestedDriverName()));
@@ -145,7 +145,7 @@ public class SchemaManager {
 		return schema;
 	}
 
-	private static String buildTargetUrlForSchema(DriverPropertiesInfo driverPropertiesInfo) {
+	private static String buildTargetUrlForSchema(DriverPropertiesInfo driverPropertiesInfo, String schemaName) {
 		StringBuilder targetUrlBuilder = new StringBuilder();
 		String requestedDriverName = driverPropertiesInfo.getRequestedDriverName();
 		String connectionString = DriverUtil.getDriverClassFlagForDriverName(requestedDriverName);
@@ -178,7 +178,7 @@ public class SchemaManager {
 		if(formattedHostName.charAt(formattedHostName.length() - 1) != 0x2F) {
 			targetUrlBuilder.append("/");
 		}
-		targetUrlBuilder.append(driverPropertiesInfo);
+		targetUrlBuilder.append(schemaName);
 
 		if(driverPropertiesInfo.getUrlParams() != null && driverPropertiesInfo.getUrlParams().size() > 0) {
 			targetUrlBuilder.append("?");
