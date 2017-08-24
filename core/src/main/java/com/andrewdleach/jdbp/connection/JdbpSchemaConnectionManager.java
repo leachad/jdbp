@@ -25,6 +25,7 @@ public class JdbpSchemaConnectionManager {
 	private String driverName;
 
 	public JdbpSchemaConnectionManager(String schemaName, String driverName, JdbpSchemaConnectionManagerProperties connectionManagerProperties) {
+		this.schemaName = schemaName;
 		this.connectionManagerProperties = connectionManagerProperties;
 		this.driverName = driverName;
 		if(SqlUtil.isNoSqlDriver(driverName)) {
