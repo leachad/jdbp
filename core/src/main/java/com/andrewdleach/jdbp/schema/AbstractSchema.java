@@ -22,8 +22,8 @@ import com.andrewdleach.jdbp.parser.ResultSetTransposer;
 import com.andrewdleach.jdbp.properties.util.SqlUtil;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperationInfo;
 import com.andrewdleach.jdbp.statement.syntax.sproc.JdbpCallableStatement;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.async.client.MongoCollection;
+import com.mongodb.async.client.MongoDatabase;
 
 /**
  * @since 12.1.16
@@ -290,9 +290,11 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 		List<DBInfo> noSqlDBInfos = new ArrayList<>();
 		if(SqlUtil.isMongoDriver(getDriverName())) {
 			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
-			MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
-			MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
-			noSqlDBInfos = DBInfoTransposer.convertToDBInfosFromDocuments(mongoCollection, containerClass);
+			if(noSqlDataSource != null) {
+				MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
+				MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
+				noSqlDBInfos = DBInfoTransposer.convertToDBInfosFromDocuments(mongoCollection, containerClass);
+			}
 		}
 		return noSqlDBInfos;
 	}
@@ -301,17 +303,19 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 		boolean isSuccess = true;
 		if(SqlUtil.isMongoDriver(getDriverName())) {
 			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
-			MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
-			MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
-			List<Document> dbInfosConvertedToDocuments = null;
-			try {
-				dbInfosConvertedToDocuments = DBInfoTransposer.constructNoSqlUpdateJson(dbInfos, containerClass);
+			if(noSqlDataSource != null) {
+				MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
+				MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
+				List<Document> dbInfosConvertedToDocuments = null;
+				try {
+					dbInfosConvertedToDocuments = DBInfoTransposer.constructNoSqlUpdateJson(dbInfos, containerClass);
+				}
+				catch(JdbpException e) {
+					isSuccess = false;
+					JdbpLogger.logInfo(JdbpLoggerConstants.NOSQL, e);
+				}
+				mongoCollection.insertMany(dbInfosConvertedToDocuments, null);
 			}
-			catch(JdbpException e) {
-				isSuccess = false;
-				JdbpLogger.logInfo(JdbpLoggerConstants.NOSQL, e);
-			}
-			mongoCollection.insertMany(dbInfosConvertedToDocuments);
 		}
 		return isSuccess;
 	}
@@ -320,12 +324,13 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 		List<DBInfo> dbInfos = new ArrayList<>(topN);
 		if(SqlUtil.isMongoDriver(getDriverName())) {
 			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
-			MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
-			MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
-			dbInfos = DBInfoTransposer.convertToDBInfosFromDocuments(mongoCollection, containerClass);
+			if(noSqlDataSource != null) {
+				MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
+				MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
+				dbInfos = DBInfoTransposer.convertToDBInfosFromDocuments(mongoCollection, containerClass);
+			}
 		}
 		return dbInfos.isEmpty() ? dbInfos : dbInfos.subList(0, topN);
 	}
-
 
 }

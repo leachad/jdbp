@@ -57,7 +57,7 @@ public class JdbpSchemaConnectionManager {
 	}
 
 	protected NoSqlDataSource getNoSqlConnection() {
-		return getNoSqlDataSource();
+		return getNoSqlDataSource().isConnectionAvailable() ? getNoSqlDataSource() : null;
 	}
 
 	private Connection getHikariConnection() throws JdbpException {

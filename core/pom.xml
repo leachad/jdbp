@@ -37,7 +37,7 @@
 	</dependency>
 	<dependency>
 		<groupId>org.mongodb</groupId>
-		<artifactId>mongodb-driver</artifactId>
+		<artifactId>mongodb-driver-async</artifactId>
 		<version>3.4.2</version>
 	</dependency>
   </dependencies>

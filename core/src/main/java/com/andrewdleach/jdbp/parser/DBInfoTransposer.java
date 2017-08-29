@@ -6,11 +6,17 @@ package com.andrewdleach.jdbp.parser;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
 
 import org.bson.Document;
 
 import com.andrewdleach.jdbp.exception.JdbpException;
+import com.andrewdleach.jdbp.logger.JdbpLogger;
+import com.andrewdleach.jdbp.logger.JdbpLoggerConstants;
 import com.andrewdleach.jdbp.model.DBInfo;
 import com.andrewdleach.jdbp.statement.CrudStatementManager;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudClause;
@@ -18,8 +24,8 @@ import com.andrewdleach.jdbp.statement.syntax.crud.CrudDelimiter;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperation;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperationInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoCursor;
+import com.mongodb.async.SingleResultCallback;
+import com.mongodb.async.client.MongoCollection;
 import com.mongodb.client.model.Projections;
 
 /**
@@ -211,19 +217,29 @@ public class DBInfoTransposer {
 	public static List<DBInfo> convertToDBInfosFromDocuments(MongoCollection<Document> mongoCollection, Class<? extends DBInfo> containerClass) throws JdbpException {
 		List<DBInfo> dbInfos = new ArrayList<>();
 		ObjectMapper objectMapper = new ObjectMapper();
-		MongoCursor<Document> iterator = mongoCollection.find().projection(Projections.exclude(ConversionUtil.findNoSqlCollectionExcludedFields(containerClass))).iterator();
-		while(iterator.hasNext()) {
-			try {
-				Document document = iterator.next();
-				String jsonPojoString = document.toJson();
-				DBInfo dbInfo = objectMapper.readValue(jsonPojoString, containerClass);
-				dbInfos.add(dbInfo);
+		CompletableFuture<List<DBInfo>> result = new CompletableFuture<>();
+		mongoCollection.find().projection(Projections.exclude(ConversionUtil.findNoSqlCollectionExcludedFields(containerClass))).map(Document::toJson).into(new HashSet<String>(), new SingleResultCallback<HashSet<String>>() {
+
+			@Override
+			public void onResult(HashSet<String> documentsAsStrings, Throwable t) {
+				List<DBInfo> dbInfos = documentsAsStrings.stream().map(jsonString -> {
+					try {
+						return objectMapper.readValue(jsonString, containerClass);
+					}
+					catch(IOException e) {
+						JdbpLogger.logError(JdbpLoggerConstants.NOSQL, "Could Not Convert Json To Java Object: " + containerClass.getName(), e);
+					}
+					return null;
+				}).collect(Collectors.toList());
+				result.complete(dbInfos);
 			}
-			catch(IOException e) {
-				JdbpException.throwException(e);
-			}
+		});
+		try {
+			dbInfos = result.get();
 		}
-		iterator.close();
+		catch(InterruptedException | ExecutionException e) {
+			JdbpLogger.logError(JdbpLoggerConstants.NOSQL, "Could Not Convert Json To Java Object: " + containerClass.getName(), e);
+		}
 		return dbInfos;
 	}
 }

@@ -1,17 +1,29 @@
 package com.andrewdleach.jdbp.connection.nosql;
 
-import java.util.Arrays;
+import java.sql.Timestamp;
+import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 
-import com.mongodb.MongoClient;
-import com.mongodb.MongoClientURI;
+import com.andrewdleach.jdbp.logger.JdbpLogger;
+import com.andrewdleach.jdbp.logger.JdbpLoggerConstants;
 import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.async.client.MongoClient;
+import com.mongodb.async.client.MongoClientSettings;
+import com.mongodb.async.client.MongoClients;
+import com.mongodb.async.client.MongoDatabase;
+import com.mongodb.connection.ClusterSettings;
+import com.mongodb.connection.ServerSettings;
+import com.mongodb.event.ServerHeartbeatFailedEvent;
+import com.mongodb.event.ServerHeartbeatStartedEvent;
+import com.mongodb.event.ServerHeartbeatSucceededEvent;
+import com.mongodb.event.ServerMonitorListener;
 
 public class NoSqlDataSource {
 	private NoSqlDataSourceConfig config;
 	private MongoClient mongoClient;
 	private String schemaName;
+	private boolean connectionIsAlive;
 
 	public NoSqlDataSource(NoSqlDataSourceConfig config, String schemaName) {
 		this.schemaName = schemaName;
@@ -38,13 +50,45 @@ public class NoSqlDataSource {
 
 	private void initializeMongoDatasource(NoSqlDataSourceConfig config) {
 		char[] password = config.getPassword();
-		if((password != null && password.length > 0) && (config.getUsername() != null && config.getUsername().length() > 0)) {
+		ClusterSettings clusterSettings = ClusterSettings.builder().hosts(Collections.singletonList(new ServerAddress(config.getHostName(), config.getPortNumber()))).serverSelectionTimeout(3, TimeUnit.SECONDS).build();
+		ServerSettings serverSettings = ServerSettings.builder().addServerMonitorListener(buildServerListener()).build();
+		MongoClientSettings mongoClientSettings = null;
+		if(driverRequiresCredentials(config, password)) {
 			MongoCredential mongoCredential = MongoCredential.createCredential(config.getUsername(), getSchemaName(), password);
-			mongoClient = new MongoClient(new ServerAddress(config.getHostName(), config.getPortNumber()), Arrays.asList(mongoCredential));
+			mongoClientSettings = MongoClientSettings.builder().clusterSettings(clusterSettings).serverSettings(serverSettings).credentialList(Collections.singletonList(mongoCredential)).build();
 		}
 		else {
-			mongoClient = new MongoClient(new MongoClientURI(config.getTargetUrl()));
+			mongoClientSettings = MongoClientSettings.builder().clusterSettings(clusterSettings).serverSettings(serverSettings).build();
 		}
+		mongoClient = MongoClients.create(mongoClientSettings);
+
+	}
+
+	private boolean driverRequiresCredentials(NoSqlDataSourceConfig config, char[] password) {
+		return (password != null && password.length > 0) && (config.getUsername() != null && config.getUsername().length() > 0);
+	}
+
+	private ServerMonitorListener buildServerListener() {
+		return new ServerMonitorListener() {
+
+			@Override
+			public void serverHeartbeatSucceeded(ServerHeartbeatSucceededEvent event) {
+				connectionIsAlive = true;
+
+			}
+
+			@Override
+			public void serverHeartbeatFailed(ServerHeartbeatFailedEvent event) {
+				connectionIsAlive = false;
+
+			}
+
+			@Override
+			public void serverHearbeatStarted(ServerHeartbeatStartedEvent event) {
+				JdbpLogger.logInfo(JdbpLoggerConstants.NOSQL, "Server Heartbeat Started for connectionId: ", event.getConnectionId().toString(), new Timestamp(System.currentTimeMillis()).toString());
+			}
+
+		};
 	}
 
 	public MongoDatabase getMongoDatabase() {
@@ -53,6 +97,10 @@ public class NoSqlDataSource {
 
 	public String getSchemaName() {
 		return schemaName;
+	}
+
+	public boolean isConnectionAvailable() {
+		return connectionIsAlive;
 	}
 
 	public void close() {
