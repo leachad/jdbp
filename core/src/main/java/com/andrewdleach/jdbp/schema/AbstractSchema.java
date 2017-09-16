@@ -43,6 +43,10 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 			closeHikariDataSource();
 		}
 	}
+	
+	public boolean isNoSqlDriver(){
+		return SqlUtil.isNoSqlDriver(getDriverName());
+	}
 
 	/**
 	 * @param dataSourceName

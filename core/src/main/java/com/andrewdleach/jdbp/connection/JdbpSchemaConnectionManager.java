@@ -2,6 +2,7 @@ package com.andrewdleach.jdbp.connection;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.List;
 
 import com.andrewdleach.jdbp.connection.nosql.NoSqlDataSource;
 import com.andrewdleach.jdbp.connection.nosql.NoSqlDataSourceConfig;

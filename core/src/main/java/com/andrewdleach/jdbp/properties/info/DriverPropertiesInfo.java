@@ -29,8 +29,8 @@ public class DriverPropertiesInfo implements Serializable {
 	private boolean dbDefinedStatements;
 	private boolean loadBalanced;
 	private Driver driver;
-
 	private Properties properties;
+	private List<String> cacheableTableNames;
 	
 	public String getDriverClassLabel() {
 		return driverClassLabel;
@@ -167,6 +167,14 @@ public class DriverPropertiesInfo implements Serializable {
 	
 	public void setJavaProperties(Properties properties) {
 		this.properties = properties;
+	}
+	
+	public List<String> getCacheableTableNames() {
+		return cacheableTableNames;
+	}
+	
+	public void setCacheableTableNames(List<String> cacheableTableNames) {
+		this.cacheableTableNames = cacheableTableNames;
 	}
 
 }

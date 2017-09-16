@@ -35,6 +35,7 @@ public class DriverLocator {
 	private static final String PASSWORD = "password";
 	private static final String PROP_DEFINED_STATEMENTS = "propDefinedStatements";
 	private static final String DB_DEFINED_STATEMENTS = "dbDefinedStatements";
+	private static final String CACHEABLE_TABLES = "cacheableTables";
 	
 	private static Map<String, DriverPropertiesInfo> definedDriverMap = new HashMap<>();
 
@@ -97,6 +98,9 @@ public class DriverLocator {
 			}
 			else if(propertyName.equals(DB_DEFINED_STATEMENTS)) {
 				driverInfo.setDbDefinedStatements(Boolean.getBoolean(driverProperties));
+			} 
+			else if (propertyName.equals(CACHEABLE_TABLES)) {
+				driverInfo.setCacheableTableNames(getCacheableTableNames(driverProperties));
 			}
 		
 		if(driverInfo.getDriver() == null) {
@@ -104,7 +108,7 @@ public class DriverLocator {
 			driverInfo.setDriver(driver);
 		}
 	}
-	
+
 	/**
 	 * @param urlParams
 	 */
@@ -186,5 +190,14 @@ public class DriverLocator {
 			schemaNames.add(schemaName);
 		}
 		return schemaNames;
+	}
+	
+	private static List<String> getCacheableTableNames(String cacheableTablesPropertyString) {
+		String[] cacheableTableNamesArray = cacheableTablesPropertyString.split("[,]");
+		List<String> cacheableTableNames = new ArrayList<>();
+		for (String cacheableTableName : cacheableTableNamesArray) {
+			cacheableTableNames.add(cacheableTableName);
+		}
+		return cacheableTableNames;
 	}
 }

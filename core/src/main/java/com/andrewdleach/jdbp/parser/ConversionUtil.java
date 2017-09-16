@@ -59,7 +59,7 @@ public class ConversionUtil {
 		for(int i = 0; i < fields.length; i++) {
 			Field current = fields[i];
 			current.setAccessible(true);
-			if(dbInfo.getClass().isAnnotationPresent(SQLTable.class) && dbInfo.getClass().getAnnotation(SQLTable.class).hasPrimaryKey() && !dbInfo.getClass().getAnnotation(SQLTable.class).primaryKeyColumn().equals(current.getName())) {
+			if(isSqlOrNoSqlDBInfo(dbInfo, current)) {
 				try {
 					if(current.getType().isPrimitive()) {
 						csvString.append(current.get(dbInfo));
@@ -116,5 +116,10 @@ public class ConversionUtil {
 			JdbpException.throwException(e);
 		}
 		return collectionExcludedFields;
+	}
+	
+	private static boolean isSqlOrNoSqlDBInfo(DBInfo dbInfo, Field currentField){
+		return (dbInfo.getClass().isAnnotationPresent(SQLTable.class) && dbInfo.getClass().getAnnotation(SQLTable.class).hasPrimaryKey() && !dbInfo.getClass().getAnnotation(SQLTable.class).primaryKeyColumn().equals(currentField.getName()))
+				|| (dbInfo.getClass().isAnnotationPresent(NoSQLCollection.class) && !dbInfo.getClass().getAnnotation(NoSQLCollection.class).excludedFields().contains(currentField.getName()));
 	}
 }

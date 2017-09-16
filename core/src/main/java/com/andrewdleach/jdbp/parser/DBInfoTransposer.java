@@ -24,6 +24,7 @@ import com.andrewdleach.jdbp.statement.syntax.crud.CrudDelimiter;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperation;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperationInfo;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import com.mongodb.async.SingleResultCallback;
 import com.mongodb.async.client.MongoCollection;
 import com.mongodb.client.model.Projections;
@@ -216,20 +217,14 @@ public class DBInfoTransposer {
 
 	public static List<DBInfo> convertToDBInfosFromDocuments(MongoCollection<Document> mongoCollection, Class<? extends DBInfo> containerClass) throws JdbpException {
 		List<DBInfo> dbInfos = new ArrayList<>();
-		ObjectMapper objectMapper = new ObjectMapper();
+		Gson gson = new Gson();
 		CompletableFuture<List<DBInfo>> result = new CompletableFuture<>();
 		mongoCollection.find().projection(Projections.exclude(ConversionUtil.findNoSqlCollectionExcludedFields(containerClass))).map(Document::toJson).into(new HashSet<String>(), new SingleResultCallback<HashSet<String>>() {
 
 			@Override
 			public void onResult(HashSet<String> documentsAsStrings, Throwable t) {
 				List<DBInfo> dbInfos = documentsAsStrings.stream().map(jsonString -> {
-					try {
-						return objectMapper.readValue(jsonString, containerClass);
-					}
-					catch(IOException e) {
-						JdbpLogger.logError(JdbpLoggerConstants.NOSQL, "Could Not Convert Json To Java Object: " + containerClass.getName(), e);
-					}
-					return null;
+					return gson.fromJson(jsonString, containerClass);
 				}).collect(Collectors.toList());
 				result.complete(dbInfos);
 			}
