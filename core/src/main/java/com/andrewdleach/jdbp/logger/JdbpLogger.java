@@ -29,6 +29,5 @@ public class JdbpLogger {
 	public static void logError(String fileToLog, String message, Exception e) {
 		Logger specificLogger = getLogger(fileToLog);
 		specificLogger.log(Level.SEVERE, message, e);
-
 	}
 }
