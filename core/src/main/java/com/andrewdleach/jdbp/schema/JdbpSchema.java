@@ -26,17 +26,20 @@ public class JdbpSchema extends AbstractSchema {
 	}
 
 	/**
+	 * @param <T>
 	 * @param rawQueryString
 	 * @param containerClass
 	 *        is the container class definition for the query results returned
 	 * @return List<DBInfo>
 	 * @throws JdbpException
 	 */
-	public List<DBInfo> executeQuery(String rawQueryString, Class<? extends DBInfo> containerClass) throws JdbpException {
-		return executeRawQueryStatement(rawQueryString, containerClass);
+	@SuppressWarnings("unchecked")
+	public <T> List<T> executeQuery(String rawQueryString, Class<? extends DBInfo> containerClass) throws JdbpException {
+		return (List<T>)executeRawQueryStatement(rawQueryString, containerClass);
 	}
 
 	/**
+	 * @param <T>
 	 * @param destinationTableName
 	 * @param clause
 	 *        (Must be a commaSeparatedString with tuples defined like id=1,name=someName,etc...)
@@ -44,18 +47,21 @@ public class JdbpSchema extends AbstractSchema {
 	 * @return
 	 * @throws JdbpException
 	 */
-	public List<DBInfo> executeSelect(String destinationTableName, String clause, Class<? extends DBInfo> containerClass) throws JdbpException {
-		return executePreparedQuery(new CrudOperationInfo(CrudOperation.SELECT, clause), destinationTableName, containerClass);
+	@SuppressWarnings("unchecked")
+	public <T> List<T> executeSelect(String destinationTableName, String clause, Class<? extends DBInfo> containerClass) throws JdbpException {
+		return (List<T>)executePreparedQuery(new CrudOperationInfo(CrudOperation.SELECT, clause), destinationTableName, containerClass);
 	}
 
 	/**
+	 * @param <T>
 	 * @param destinationTableName
 	 * @param containerClass
 	 * @return
 	 * @throws JdbpException
 	 */
-	public List<DBInfo> executeSelect(String destinationTableName, Class<? extends DBInfo> containerClass) throws JdbpException {
-		return executePreparedQuery(new CrudOperationInfo(CrudOperation.SELECT), destinationTableName, containerClass);
+	@SuppressWarnings("unchecked")
+	public <T> List<T> executeSelect(String destinationTableName, Class<? extends DBInfo> containerClass) throws JdbpException {
+		return (List<T>)executePreparedQuery(new CrudOperationInfo(CrudOperation.SELECT), destinationTableName, containerClass);
 	}
 
 	/**
@@ -125,14 +131,16 @@ public class JdbpSchema extends AbstractSchema {
 	}
 
 	/**
+	 * @param <T>
 	 * @param procedureName
 	 * @param containerClass
-	 * @return List<DBInfo>
+	 * @return List<T>
 	 * @throws JdbpException
 	 */
-	public List<DBInfo> executeStoredProcedure(String procedureName, Class<? extends DBInfo> containerClass) throws JdbpException {
+	@SuppressWarnings("unchecked")
+	public <T> List<T> executeStoredProcedure(String procedureName, Class<? extends DBInfo> containerClass) throws JdbpException {
 		JdbpCallableStatement statementInfo = prepareStatementInfo(procedureName);
-		return executeCallableStatement(procedureName, statementInfo, containerClass);
+		return (List<T>)executeCallableStatement(procedureName, statementInfo, containerClass);
 
 	}
 

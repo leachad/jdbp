@@ -12,16 +12,18 @@ public class JdbpNoSqlSchema extends AbstractSchema {
 		super(schemaName, driverName, connectionManagerProperties);
 	}
 
-	public List<DBInfo> getCollection(String destinationTableName, Class<? extends DBInfo> containerClass) throws JdbpException {
-		return executeNoSqlGet(destinationTableName, containerClass);
+	@SuppressWarnings("unchecked")
+	public <T> List<T> getCollection(String destinationTableName, Class<? extends DBInfo> containerClass) throws JdbpException {
+		return (List<T>)executeNoSqlGet(destinationTableName, containerClass);
 	}
 
 	public boolean insertCollection(String destinationTableName, List<DBInfo> dbInfoCollection, Class<? extends DBInfo> containerClass) throws JdbpException {
 		return executeNoSqlUpdate(destinationTableName, dbInfoCollection, containerClass);
 	}
 
-	public DBInfo findOne(String destinationTableName, Class<? extends DBInfo> containerClass) throws JdbpException {
-		List<DBInfo> dbInfos = executeNoSqlFindTopN(destinationTableName, containerClass, 1);
+	@SuppressWarnings("unchecked")
+	public <T> T findOne(String destinationTableName, Class<? extends DBInfo> containerClass) throws JdbpException {
+		List<T> dbInfos = (List<T>)executeNoSqlFindTopN(destinationTableName, containerClass, 1);
 		return dbInfos.isEmpty() ? null : dbInfos.get(0);
 	}
 
