@@ -27,7 +27,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.mongodb.async.SingleResultCallback;
 import com.mongodb.async.client.MongoCollection;
-import com.mongodb.client.model.Projections;
 
 /**
  * @since 1.24.17
@@ -219,7 +218,7 @@ public class DBInfoTransposer {
 		List<DBInfo> dbInfos = new ArrayList<>();
 		Gson gson = new Gson();
 		CompletableFuture<List<DBInfo>> result = new CompletableFuture<>();
-		mongoCollection.find().projection(Projections.exclude(ConversionUtil.findNoSqlCollectionExcludedFields(containerClass))).map(Document::toJson).into(new HashSet<String>(), new SingleResultCallback<HashSet<String>>() {
+		mongoCollection.find().map(Document::toJson).into(new HashSet<String>(), new SingleResultCallback<HashSet<String>>() {
 
 			@Override
 			public void onResult(HashSet<String> documentsAsStrings, Throwable t) {
