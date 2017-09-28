@@ -25,6 +25,10 @@ public class Jdbp {
 		SchemaManager.createAllSchemasFromProperties();
 	}
 
+	public static void initializeInstance() {
+		Jdbp.getInstance();
+	}
+
 	public static Jdbp getInstance() {
 		if(jdbp == null) {
 			try {
