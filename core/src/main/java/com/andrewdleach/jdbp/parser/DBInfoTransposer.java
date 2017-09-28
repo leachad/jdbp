@@ -198,7 +198,7 @@ public class DBInfoTransposer {
 		return -1;
 	}
 
-	public static List<Document> constructNoSqlUpdateJson(List<DBInfo> dbInfos, Class<? extends DBInfo> containerClass) throws JdbpException {
+	public static List<Document> convertToDocumentsFromDBInfos(List<DBInfo> dbInfos, Class<? extends DBInfo> containerClass) throws JdbpException {
 		List<Document> documents = new ArrayList<>();
 		ObjectMapper objectMapper = new ObjectMapper();
 		for(DBInfo dbInfo: dbInfos) {
@@ -236,5 +236,19 @@ public class DBInfoTransposer {
 			JdbpLogger.logError(JdbpLoggerConstants.NOSQL, "Could Not Convert Json To Java Object: " + containerClass.getName(), e);
 		}
 		return dbInfos;
+	}
+
+	public static Document convertToDocumentFromDBInfo(DBInfo dbInfo) throws JdbpException {
+		Document basicDBObject = null;
+		ObjectMapper objectMapper = new ObjectMapper();
+		try {
+			String dbInfoJsonString = objectMapper.writeValueAsString(dbInfo);
+			basicDBObject = Document.parse(dbInfoJsonString);
+
+		}
+		catch(IOException e) {
+			JdbpException.throwException(e);
+		}
+		return basicDBObject;
 	}
 }

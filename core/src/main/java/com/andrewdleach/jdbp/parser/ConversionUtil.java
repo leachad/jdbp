@@ -11,6 +11,7 @@ import java.util.ListIterator;
 import java.util.Map;
 
 import com.andrewdleach.jdbp.annotation.NoSQLCollection;
+import com.andrewdleach.jdbp.annotation.NoSQLUpsertCondition;
 import com.andrewdleach.jdbp.annotation.SQLTable;
 import com.andrewdleach.jdbp.exception.JdbpException;
 import com.andrewdleach.jdbp.logger.JdbpLogger;
@@ -117,9 +118,33 @@ public class ConversionUtil {
 		}
 		return collectionExcludedFields;
 	}
-	
-	private static boolean isSqlOrNoSqlDBInfo(DBInfo dbInfo, Field currentField){
-		return (dbInfo.getClass().isAnnotationPresent(SQLTable.class) && dbInfo.getClass().getAnnotation(SQLTable.class).hasPrimaryKey() && !dbInfo.getClass().getAnnotation(SQLTable.class).primaryKeyColumn().equals(currentField.getName()))
-				|| (dbInfo.getClass().isAnnotationPresent(NoSQLCollection.class) && !dbInfo.getClass().getAnnotation(NoSQLCollection.class).excludedFields().contains(currentField.getName()));
+
+	private static boolean isSqlOrNoSqlDBInfo(DBInfo dbInfo, Field currentField) {
+		return (dbInfo.getClass().isAnnotationPresent(SQLTable.class) && dbInfo.getClass().getAnnotation(SQLTable.class).hasPrimaryKey() && !dbInfo.getClass().getAnnotation(SQLTable.class).primaryKeyColumn().equals(currentField.getName())) || (dbInfo.getClass().isAnnotationPresent(NoSQLCollection.class) && !dbInfo.getClass().getAnnotation(NoSQLCollection.class).excludedFields().contains(currentField.getName()));
+	}
+
+	public static Map<String, Object> findNoSqlCollectionUpsertConditions(DBInfo dbInfo) throws JdbpException {
+		Map<String, Object> noSqlUpsertConditions = new HashMap<>();
+
+		if(dbInfo != null && dbInfo.getClass().isAnnotationPresent(NoSQLUpsertCondition.class)) {
+			constructCurrentUpsertConditionMap(noSqlUpsertConditions, dbInfo);
+		}
+		return noSqlUpsertConditions;
+	}
+
+	private static void constructCurrentUpsertConditionMap(Map<String, Object> noSqlUpsertConditions, DBInfo originalInstance) throws JdbpException {
+		Field[] fields = originalInstance.getClass().getFields();
+		for(Field field: fields) {
+			if(field.getClass().isAnnotationPresent(NoSQLUpsertCondition.class)) {
+				Object value = null;
+				try {
+					value = field.get(originalInstance);
+				}
+				catch(IllegalArgumentException | IllegalAccessException e) {
+					JdbpException.throwException(e);
+				}
+				noSqlUpsertConditions.put(field.getName(), value);
+			}
+		}
 	}
 }

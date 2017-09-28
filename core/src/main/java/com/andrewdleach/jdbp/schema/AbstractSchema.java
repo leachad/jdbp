@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.bson.Document;
 
@@ -17,6 +18,7 @@ import com.andrewdleach.jdbp.exception.JdbpException;
 import com.andrewdleach.jdbp.logger.JdbpLogger;
 import com.andrewdleach.jdbp.logger.JdbpLoggerConstants;
 import com.andrewdleach.jdbp.model.DBInfo;
+import com.andrewdleach.jdbp.parser.ConversionUtil;
 import com.andrewdleach.jdbp.parser.DBInfoTransposer;
 import com.andrewdleach.jdbp.parser.ResultSetTransposer;
 import com.andrewdleach.jdbp.properties.util.SqlUtil;
@@ -24,6 +26,7 @@ import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperationInfo;
 import com.andrewdleach.jdbp.statement.syntax.sproc.JdbpCallableStatement;
 import com.mongodb.async.client.MongoCollection;
 import com.mongodb.async.client.MongoDatabase;
+import com.mongodb.client.model.UpdateOptions;
 
 /**
  * @since 12.1.16
@@ -43,8 +46,8 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 			closeHikariDataSource();
 		}
 	}
-	
-	public boolean isNoSqlDriver(){
+
+	public boolean isNoSqlDriver() {
 		return SqlUtil.isNoSqlDriver(getDriverName());
 	}
 
@@ -303,22 +306,48 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 		return noSqlDBInfos;
 	}
 
-	protected boolean executeNoSqlUpdate(String destinationTableName, List<DBInfo> dbInfos, Class<? extends DBInfo> containerClass) {
-		boolean isSuccess = true;
+	protected boolean executeNoSqlUpdateOne(String destinationTableName, DBInfo dbInfo) throws JdbpException {
+		boolean isSuccess = false;
 		if(SqlUtil.isMongoDriver(getDriverName())) {
 			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
 			if(noSqlDataSource != null) {
 				MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
 				MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
-				List<Document> dbInfosConvertedToDocuments = null;
+				Document dbInfoAsDocument = null;
 				try {
-					dbInfosConvertedToDocuments = DBInfoTransposer.constructNoSqlUpdateJson(dbInfos, containerClass);
+					dbInfoAsDocument = DBInfoTransposer.convertToDocumentFromDBInfo(dbInfo);
 				}
 				catch(JdbpException e) {
 					isSuccess = false;
 					JdbpLogger.logInfo(JdbpLoggerConstants.NOSQL, e);
 				}
-				mongoCollection.insertMany(dbInfosConvertedToDocuments, null);
+				Map<String, Object> noSqlUpsertConditions = ConversionUtil.findNoSqlCollectionUpsertConditions(dbInfo);
+				Document filter = null;
+				if(!noSqlUpsertConditions.isEmpty()) {
+					filter = new Document(noSqlUpsertConditions);
+					mongoCollection.updateMany(filter, dbInfoAsDocument, new UpdateOptions().upsert(true), null);
+				}
+				else {
+					mongoCollection.insertOne(dbInfoAsDocument, null);
+				}
+			}
+		}
+		return isSuccess;
+	}
+
+	protected boolean executeNoSqlUpdateMany(String destinationTableName, List<DBInfo> dbInfos) {
+		boolean isSuccess = true;
+		if(SqlUtil.isMongoDriver(getDriverName())) {
+			if(getNoSqlConnection().isConnectionAvailable()) {
+				for(DBInfo dbInfo: dbInfos) {
+					try {
+						executeNoSqlUpdateOne(destinationTableName, dbInfo);
+					}
+					catch(JdbpException e) {
+						isSuccess = false;
+						JdbpLogger.logInfo(JdbpLoggerConstants.NOSQL, e);
+					}
+				}
 			}
 		}
 		return isSuccess;
