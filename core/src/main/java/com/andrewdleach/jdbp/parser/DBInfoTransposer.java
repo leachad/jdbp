@@ -23,6 +23,7 @@ import com.andrewdleach.jdbp.statement.syntax.crud.CrudClause;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudDelimiter;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperation;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperationInfo;
+import com.andrewdleach.jdbp.tools.JdbpTypeUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.mongodb.async.SingleResultCallback;
@@ -215,11 +216,34 @@ public class DBInfoTransposer {
 		return documents;
 	}
 
-	public static List<DBInfo> convertToDBInfosFromDocuments(MongoCollection<Document> mongoCollection, Class<? extends DBInfo> containerClass) throws JdbpException {
+	public static List<DBInfo> executeUnconditionalFindAndReturnDBInfos(MongoCollection<Document> mongoCollection, Class<? extends DBInfo> containerClass) throws JdbpException {
 		List<DBInfo> dbInfos = new ArrayList<>();
 		Gson gson = new Gson();
 		CompletableFuture<List<DBInfo>> result = new CompletableFuture<>();
-		mongoCollection.find().projection(Projections.exclude(ConversionUtil.findNoSqlCollectionExcludedFields(containerClass))).map(Document::toJson).into(new HashSet<String>(), new SingleResultCallback<HashSet<String>>() {
+		mongoCollection.find().projection(Projections.exclude(JdbpTypeUtil.findNoSqlCollectionExcludedFields(containerClass))).map(Document::toJson).into(new HashSet<String>(), new SingleResultCallback<HashSet<String>>() {
+
+			@Override
+			public void onResult(HashSet<String> documentsAsStrings, Throwable t) {
+				List<DBInfo> dbInfos = documentsAsStrings.stream().map(jsonString -> {
+					return gson.fromJson(jsonString, containerClass);
+				}).collect(Collectors.toList());
+				result.complete(dbInfos);
+			}
+		});
+		try {
+			dbInfos = result.get();
+		}
+		catch(InterruptedException | ExecutionException e) {
+			JdbpLogger.logError(JdbpLoggerConstants.NOSQL, "Could Not Convert Json To Java Object: " + containerClass.getName(), e);
+		}
+		return dbInfos;
+	}
+	
+	public static List<DBInfo> executeConditionalFindAndReturnsDBInfos(MongoCollection<Document> mongoCollection, Class<? extends DBInfo> containerClass, Document filterDocument) throws JdbpException {
+		List<DBInfo> dbInfos = new ArrayList<>();
+		Gson gson = new Gson();
+		CompletableFuture<List<DBInfo>> result = new CompletableFuture<>();
+		mongoCollection.find(filterDocument).projection(Projections.exclude(JdbpTypeUtil.findNoSqlCollectionExcludedFields(containerClass))).map(Document::toJson).into(new HashSet<String>(), new SingleResultCallback<HashSet<String>>() {
 
 			@Override
 			public void onResult(HashSet<String> documentsAsStrings, Throwable t) {

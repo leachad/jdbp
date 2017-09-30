@@ -8,6 +8,8 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import org.bson.Document;
 
@@ -18,15 +20,17 @@ import com.andrewdleach.jdbp.exception.JdbpException;
 import com.andrewdleach.jdbp.logger.JdbpLogger;
 import com.andrewdleach.jdbp.logger.JdbpLoggerConstants;
 import com.andrewdleach.jdbp.model.DBInfo;
-import com.andrewdleach.jdbp.parser.ConversionUtil;
 import com.andrewdleach.jdbp.parser.DBInfoTransposer;
 import com.andrewdleach.jdbp.parser.ResultSetTransposer;
 import com.andrewdleach.jdbp.properties.util.SqlUtil;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperationInfo;
 import com.andrewdleach.jdbp.statement.syntax.sproc.JdbpCallableStatement;
+import com.andrewdleach.jdbp.tools.JdbpTypeUtil;
+import com.mongodb.async.SingleResultCallback;
 import com.mongodb.async.client.MongoCollection;
 import com.mongodb.async.client.MongoDatabase;
 import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.result.UpdateResult;
 
 /**
  * @since 12.1.16
@@ -300,7 +304,7 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 			if(noSqlDataSource != null) {
 				MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
 				MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
-				noSqlDBInfos = DBInfoTransposer.convertToDBInfosFromDocuments(mongoCollection, containerClass);
+				noSqlDBInfos = DBInfoTransposer.executeUnconditionalFindAndReturnDBInfos(mongoCollection, containerClass);
 			}
 		}
 		return noSqlDBInfos;
@@ -308,6 +312,7 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 
 	protected boolean executeNoSqlUpdateOne(String destinationTableName, DBInfo dbInfo) throws JdbpException {
 		boolean isSuccess = false;
+		CompletableFuture<Boolean> result = new CompletableFuture<>();
 		if(SqlUtil.isMongoDriver(getDriverName())) {
 			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
 			if(noSqlDataSource != null) {
@@ -321,16 +326,39 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 					isSuccess = false;
 					JdbpLogger.logInfo(JdbpLoggerConstants.NOSQL, e);
 				}
-				Map<String, Object> noSqlUpsertConditions = ConversionUtil.findNoSqlCollectionUpsertConditions(dbInfo);
+				Map<String, Object> noSqlUpsertConditions = JdbpTypeUtil.findNoSqlCollectionUpsertConditions(dbInfo);
 				Document filter = null;
+				
 				if(!noSqlUpsertConditions.isEmpty()) {
 					filter = new Document(noSqlUpsertConditions);
-					mongoCollection.updateMany(filter, dbInfoAsDocument, new UpdateOptions().upsert(true), null);
+					mongoCollection.updateMany(filter, dbInfoAsDocument, new UpdateOptions().upsert(true), new SingleResultCallback<UpdateResult>() {
+
+						@Override
+						public void onResult(UpdateResult updateResult, Throwable error) {
+							if (error == null && updateResult.wasAcknowledged()) {
+								result.complete(true);
+							}
+						}
+						
+					});
 				}
 				else {
-					mongoCollection.insertOne(dbInfoAsDocument, null);
+					mongoCollection.insertOne(dbInfoAsDocument, new SingleResultCallback<Void>() {
+						@Override
+						public void onResult(Void voidElement, Throwable error) {
+							if (error == null) {
+								result.complete(true);
+							}	
+						}
+						
+					});
 				}
 			}
+		}
+		try {
+			isSuccess = result.get();
+		} catch (InterruptedException | ExecutionException e) {
+			JdbpLogger.logError(JdbpLoggerConstants.NOSQL, "MongoDB Callback Failed", e);
 		}
 		return isSuccess;
 	}
@@ -353,6 +381,19 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 		return isSuccess;
 	}
 
+	protected List<DBInfo> executeNoSqlFindTopN(String destinationTableName, Class<? extends DBInfo> containerClass, int topN, Map<String, Object> equalityFiltersForFind) throws JdbpException {
+		List<DBInfo> dbInfos = new ArrayList<>(topN);
+		if(SqlUtil.isMongoDriver(getDriverName())) {
+			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
+			if(noSqlDataSource != null) {
+				MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
+				MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
+				dbInfos = DBInfoTransposer.executeConditionalFindAndReturnsDBInfos(mongoCollection, containerClass, new Document(equalityFiltersForFind));
+			}
+		}
+		return dbInfos.isEmpty() ? dbInfos : dbInfos.subList(0, topN);
+	}
+	
 	protected List<DBInfo> executeNoSqlFindTopN(String destinationTableName, Class<? extends DBInfo> containerClass, int topN) throws JdbpException {
 		List<DBInfo> dbInfos = new ArrayList<>(topN);
 		if(SqlUtil.isMongoDriver(getDriverName())) {
@@ -360,7 +401,7 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 			if(noSqlDataSource != null) {
 				MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
 				MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
-				dbInfos = DBInfoTransposer.convertToDBInfosFromDocuments(mongoCollection, containerClass);
+				dbInfos = DBInfoTransposer.executeUnconditionalFindAndReturnDBInfos(mongoCollection, containerClass);
 			}
 		}
 		return dbInfos.isEmpty() ? dbInfos : dbInfos.subList(0, topN);

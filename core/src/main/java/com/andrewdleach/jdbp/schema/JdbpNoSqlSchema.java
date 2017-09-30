@@ -1,6 +1,7 @@
 package com.andrewdleach.jdbp.schema;
 
 import java.util.List;
+import java.util.Map;
 
 import com.andrewdleach.jdbp.connection.JdbpSchemaConnectionManagerProperties;
 import com.andrewdleach.jdbp.exception.JdbpException;
@@ -22,8 +23,8 @@ public class JdbpNoSqlSchema extends AbstractSchema {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> T findOne(String destinationTableName, Class<? extends DBInfo> containerClass) throws JdbpException {
-		List<T> dbInfos = (List<T>)executeNoSqlFindTopN(destinationTableName, containerClass, 1);
+	public <T> T findOne(String destinationTableName, Class<? extends DBInfo> containerClass, Map<String, Object> equalityFiltersForFind) throws JdbpException {
+		List<T> dbInfos = (List<T>)executeNoSqlFindTopN(destinationTableName, containerClass, 1, equalityFiltersForFind);
 		return dbInfos.isEmpty() ? null : dbInfos.get(0);
 	}
 
