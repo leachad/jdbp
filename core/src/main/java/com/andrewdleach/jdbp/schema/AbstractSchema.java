@@ -331,12 +331,14 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 				
 				if(!noSqlUpsertConditions.isEmpty()) {
 					filter = new Document(noSqlUpsertConditions);
-					mongoCollection.updateMany(filter, dbInfoAsDocument, new UpdateOptions().upsert(true), new SingleResultCallback<UpdateResult>() {
+					mongoCollection.replaceOne(filter, dbInfoAsDocument, new UpdateOptions().upsert(true), new SingleResultCallback<UpdateResult>() {
 
 						@Override
 						public void onResult(UpdateResult updateResult, Throwable error) {
 							if (error == null && updateResult.wasAcknowledged()) {
 								result.complete(true);
+							}else {
+								result.complete(false);
 							}
 						}
 						
@@ -348,7 +350,9 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 						public void onResult(Void voidElement, Throwable error) {
 							if (error == null) {
 								result.complete(true);
-							}	
+							}else {
+								result.complete(false);
+							}
 						}
 						
 					});

@@ -3,7 +3,6 @@
  */
 package com.andrewdleach.jdbp.parser;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -24,8 +23,6 @@ import com.andrewdleach.jdbp.statement.syntax.crud.CrudDelimiter;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperation;
 import com.andrewdleach.jdbp.statement.syntax.crud.CrudOperationInfo;
 import com.andrewdleach.jdbp.tools.JdbpTypeUtil;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
 import com.mongodb.async.SingleResultCallback;
 import com.mongodb.async.client.MongoCollection;
 import com.mongodb.client.model.Projections;
@@ -201,31 +198,22 @@ public class DBInfoTransposer {
 
 	public static List<Document> convertToDocumentsFromDBInfos(List<DBInfo> dbInfos, Class<? extends DBInfo> containerClass) throws JdbpException {
 		List<Document> documents = new ArrayList<>();
-		ObjectMapper objectMapper = new ObjectMapper();
 		for(DBInfo dbInfo: dbInfos) {
-			try {
-				String dbInfoJsonString = objectMapper.writeValueAsString(dbInfo);
-				Document basicDBObject = Document.parse(dbInfoJsonString);
-				documents.add(basicDBObject);
-
-			}
-			catch(IOException e) {
-				JdbpException.throwException(e);
-			}
+			Document basicDBObject = Document.parse(JdbpTypeUtil.convertDBInfoToJson(dbInfo));
+			documents.add(basicDBObject);
 		}
 		return documents;
 	}
 
 	public static List<DBInfo> executeUnconditionalFindAndReturnDBInfos(MongoCollection<Document> mongoCollection, Class<? extends DBInfo> containerClass) throws JdbpException {
 		List<DBInfo> dbInfos = new ArrayList<>();
-		Gson gson = new Gson();
 		CompletableFuture<List<DBInfo>> result = new CompletableFuture<>();
 		mongoCollection.find().projection(Projections.exclude(JdbpTypeUtil.findNoSqlCollectionExcludedFields(containerClass))).map(Document::toJson).into(new HashSet<String>(), new SingleResultCallback<HashSet<String>>() {
 
 			@Override
 			public void onResult(HashSet<String> documentsAsStrings, Throwable t) {
 				List<DBInfo> dbInfos = documentsAsStrings.stream().map(jsonString -> {
-					return gson.fromJson(jsonString, containerClass);
+					return JdbpTypeUtil.convertJsonToDBInfo(jsonString, containerClass);
 				}).collect(Collectors.toList());
 				result.complete(dbInfos);
 			}
@@ -241,14 +229,13 @@ public class DBInfoTransposer {
 	
 	public static List<DBInfo> executeConditionalFindAndReturnsDBInfos(MongoCollection<Document> mongoCollection, Class<? extends DBInfo> containerClass, Document filterDocument) throws JdbpException {
 		List<DBInfo> dbInfos = new ArrayList<>();
-		Gson gson = new Gson();
 		CompletableFuture<List<DBInfo>> result = new CompletableFuture<>();
 		mongoCollection.find(filterDocument).projection(Projections.exclude(JdbpTypeUtil.findNoSqlCollectionExcludedFields(containerClass))).map(Document::toJson).into(new HashSet<String>(), new SingleResultCallback<HashSet<String>>() {
 
 			@Override
 			public void onResult(HashSet<String> documentsAsStrings, Throwable t) {
 				List<DBInfo> dbInfos = documentsAsStrings.stream().map(jsonString -> {
-					return gson.fromJson(jsonString, containerClass);
+					return JdbpTypeUtil.convertJsonToDBInfo(jsonString, containerClass);
 				}).collect(Collectors.toList());
 				result.complete(dbInfos);
 			}
@@ -263,16 +250,6 @@ public class DBInfoTransposer {
 	}
 
 	public static Document convertToDocumentFromDBInfo(DBInfo dbInfo) throws JdbpException {
-		Document basicDBObject = null;
-		ObjectMapper objectMapper = new ObjectMapper();
-		try {
-			String dbInfoJsonString = objectMapper.writeValueAsString(dbInfo);
-			basicDBObject = Document.parse(dbInfoJsonString);
-
-		}
-		catch(IOException e) {
-			JdbpException.throwException(e);
-		}
-		return basicDBObject;
+		return Document.parse(JdbpTypeUtil.convertDBInfoToJson(dbInfo));
 	}
 }

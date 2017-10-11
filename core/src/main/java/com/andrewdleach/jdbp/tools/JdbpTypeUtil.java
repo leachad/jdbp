@@ -9,14 +9,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.bson.Document;
-
 import com.andrewdleach.jdbp.annotation.NoSQLCollection;
 import com.andrewdleach.jdbp.annotation.NoSQLUpsertCondition;
 import com.andrewdleach.jdbp.exception.JdbpException;
 import com.andrewdleach.jdbp.model.DBInfo;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 
 public class JdbpTypeUtil {
 
@@ -80,6 +79,16 @@ public class JdbpTypeUtil {
 		}
 		return collectionExcludedFields;
 
+	}
+	
+	public static String convertDBInfoToJson(DBInfo originalInstance) {
+		Gson gson = new Gson();
+		return gson.toJson(originalInstance);
+	}
+	
+	public static DBInfo convertJsonToDBInfo(String originalInstanceAsJson, Class<? extends DBInfo> containerClass) {
+		Gson gson = new Gson();
+		return gson.fromJson(originalInstanceAsJson, containerClass);
 	}
 
 	private static List<String> constructCurrentExcludedFieldNames(DBInfo transposedObject) throws JdbpException {
