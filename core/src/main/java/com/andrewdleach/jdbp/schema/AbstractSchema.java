@@ -410,5 +410,18 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 		}
 		return dbInfos.isEmpty() ? dbInfos : dbInfos.subList(0, topN);
 	}
+	
+	protected List<DBInfo> executeNoSqlFindAll(String destinationTableName, Class<? extends DBInfo> containerClass, Map<String, Object> equalityFiltersForFind) throws JdbpException {
+		List<DBInfo> dbInfos = new ArrayList<>();
+		if(SqlUtil.isMongoDriver(getDriverName())) {
+			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
+			if(noSqlDataSource != null) {
+				MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
+				MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
+				dbInfos = DBInfoTransposer.executeConditionalFindAndReturnsDBInfos(mongoCollection, containerClass, new Document(equalityFiltersForFind));
+			}
+		}
+		return dbInfos;
+	}
 
 }

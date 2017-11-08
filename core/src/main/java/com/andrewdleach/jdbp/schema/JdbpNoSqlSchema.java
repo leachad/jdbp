@@ -27,6 +27,11 @@ public class JdbpNoSqlSchema extends AbstractSchema {
 		List<T> dbInfos = (List<T>)executeNoSqlFindTopN(destinationTableName, containerClass, 1, equalityFiltersForFind);
 		return dbInfos.isEmpty() ? null : dbInfos.get(0);
 	}
+	
+	@SuppressWarnings("unchecked")
+	public <T> List<T> findAll(String destinationTableName, Class<? extends DBInfo> containerClass, Map<String, Object> equalityFiltersForFind) throws JdbpException {
+		return (List<T>)executeNoSqlFindAll(destinationTableName, containerClass, equalityFiltersForFind);
+	}
 
 	public boolean upsertOne(String destinationTableName, DBInfo dbInfo, Class<? extends DBInfo> containerClass) throws JdbpException {
 		return executeNoSqlUpdateOne(destinationTableName, dbInfo);
