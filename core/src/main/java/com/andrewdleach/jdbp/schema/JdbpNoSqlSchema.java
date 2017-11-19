@@ -33,8 +33,12 @@ public class JdbpNoSqlSchema extends AbstractSchema {
 		return (List<T>)executeNoSqlFindAll(destinationTableName, containerClass, equalityFiltersForFind);
 	}
 
-	public boolean upsertOne(String destinationTableName, DBInfo dbInfo, Class<? extends DBInfo> containerClass) throws JdbpException {
+	public boolean upsertOne(String destinationTableName, DBInfo dbInfo) throws JdbpException {
 		return executeNoSqlUpdateOne(destinationTableName, dbInfo);
+	}
+	
+	public boolean upsertPush(String destinationTableName, Map<String, Object> queryOperation, Map<String, Object> pushOperation) throws JdbpException {
+		return executeNoSqlUpdatePushAttributes(destinationTableName, queryOperation, pushOperation);
 	}
 
 }

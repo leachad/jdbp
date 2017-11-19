@@ -38,15 +38,15 @@ import com.mongodb.client.result.UpdateResult;
  */
 public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 
-	protected AbstractSchema(String schemaName, String driverName, JdbpSchemaConnectionManagerProperties connectionManagerProperties) {
+	protected AbstractSchema(String schemaName, String driverName,
+			JdbpSchemaConnectionManagerProperties connectionManagerProperties) {
 		super(schemaName, driverName, connectionManagerProperties);
 	}
 
 	public void closeDataSource() {
-		if(SqlUtil.isNoSqlDriver(getDriverName())) {
+		if (SqlUtil.isNoSqlDriver(getDriverName())) {
 			closeNoSqlDataSource();
-		}
-		else {
+		} else {
 			closeHikariDataSource();
 		}
 	}
@@ -62,7 +62,8 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 	 * @return
 	 * @throws JdbpException
 	 */
-	protected List<DBInfo> executeRawQueryStatement(String rawQueryString, Class<? extends DBInfo> containerClass) throws JdbpException {
+	protected List<DBInfo> executeRawQueryStatement(String rawQueryString, Class<? extends DBInfo> containerClass)
+			throws JdbpException {
 		List<DBInfo> dbInfos = null;
 
 		ResultSet resultSet = null;
@@ -72,35 +73,31 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 			rawStatement = pooledConnection.createStatement();
 			resultSet = rawStatement.executeQuery(rawQueryString);
 			dbInfos = ResultSetTransposer.transposeResultSet(resultSet, containerClass);
-			if(!pooledConnection.getAutoCommit()) {
+			if (!pooledConnection.getAutoCommit()) {
 				pooledConnection.commit();
 			}
-		}
-		catch(SQLException e) {
+		} catch (SQLException e) {
 			try {
-				if(!pooledConnection.getAutoCommit()) {
+				if (!pooledConnection.getAutoCommit()) {
 					pooledConnection.rollback();
 
 				}
-			}
-			catch(SQLException eE) {
+			} catch (SQLException eE) {
 				JdbpException.throwException(eE);
 			}
 			JdbpException.throwException(e);
-		}
-		finally {
+		} finally {
 			try {
-				if(rawStatement != null) {
+				if (rawStatement != null) {
 					rawStatement.close();
 				}
-				if(resultSet != null) {
+				if (resultSet != null) {
 					resultSet.close();
 				}
-				if(pooledConnection != null) {
+				if (pooledConnection != null) {
 					pooledConnection.close();
 				}
-			}
-			catch(SQLException e) {
+			} catch (SQLException e) {
 				JdbpException.throwException(e);
 			}
 		}
@@ -114,38 +111,36 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 	 * @return
 	 * @throws JdbpException
 	 */
-	protected boolean executePreparedUpdate(CrudOperationInfo crudOperationInfo, String destinationTable, List<DBInfo> infosToUpdate) throws JdbpException {
+	protected boolean executePreparedUpdate(CrudOperationInfo crudOperationInfo, String destinationTable,
+			List<DBInfo> infosToUpdate) throws JdbpException {
 		boolean isSuccess = false;
 		Connection pooledConnection = getConnection();
 		PreparedStatement preparedUpdateStatement = null;
 		try {
-			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLUpdateString(getSchemaName(), destinationTable, crudOperationInfo, infosToUpdate, getDriverName());
+			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLUpdateString(getSchemaName(),
+					destinationTable, crudOperationInfo, infosToUpdate, getDriverName());
 			preparedUpdateStatement = pooledConnection.prepareStatement(infosStringToUpdateUnsanitized);
 			int result = preparedUpdateStatement.executeUpdate();
 			isSuccess = result == 1 ? true : false;
-			if(!pooledConnection.getAutoCommit()) {
+			if (!pooledConnection.getAutoCommit()) {
 				pooledConnection.commit();
 			}
-		}
-		catch(SQLException e) {
+		} catch (SQLException e) {
 			try {
-				if(!pooledConnection.getAutoCommit()) {
+				if (!pooledConnection.getAutoCommit()) {
 					pooledConnection.rollback();
 				}
-			}
-			catch(SQLException eE) {
+			} catch (SQLException eE) {
 				JdbpException.throwException(eE);
 			}
 			JdbpException.throwException(e);
-		}
-		finally {
+		} finally {
 			try {
-				if(preparedUpdateStatement != null) {
+				if (preparedUpdateStatement != null) {
 					preparedUpdateStatement.close();
 				}
 				pooledConnection.close();
-			}
-			catch(SQLException e) {
+			} catch (SQLException e) {
 				JdbpException.throwException(e);
 			}
 		}
@@ -154,7 +149,8 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 	}
 
 	/**
-	 * Abstract that executes an update that is expected to return a ResultSet [Ex: SELECT,
+	 * Abstract that executes an update that is expected to return a ResultSet [Ex:
+	 * SELECT,
 	 * 
 	 * @param schemaName
 	 * @param crudOperationInfo
@@ -163,43 +159,41 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 	 * @return
 	 * @throws JdbpException
 	 */
-	protected List<DBInfo> executePreparedQuery(CrudOperationInfo crudOperationInfo, String destinationTableName, Class<? extends DBInfo> containerClass) throws JdbpException {
+	protected List<DBInfo> executePreparedQuery(CrudOperationInfo crudOperationInfo, String destinationTableName,
+			Class<? extends DBInfo> containerClass) throws JdbpException {
 		List<DBInfo> dbInfos = null;
 
 		ResultSet resultSet = null;
 		Connection pooledConnection = getConnection();
 		PreparedStatement preparedQueryStatement = null;
 		try {
-			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLQueryString(getSchemaName(), destinationTableName, crudOperationInfo, containerClass, getDriverName());
+			String infosStringToUpdateUnsanitized = DBInfoTransposer.constructSQLQueryString(getSchemaName(),
+					destinationTableName, crudOperationInfo, containerClass, getDriverName());
 			preparedQueryStatement = pooledConnection.prepareStatement(infosStringToUpdateUnsanitized);
 			resultSet = preparedQueryStatement.executeQuery();
 			dbInfos = ResultSetTransposer.transposeResultSet(resultSet, containerClass);
-			if(!pooledConnection.getAutoCommit()) {
+			if (!pooledConnection.getAutoCommit()) {
 				pooledConnection.commit();
 			}
-		}
-		catch(SQLException e) {
+		} catch (SQLException e) {
 			try {
-				if(!pooledConnection.getAutoCommit()) {
+				if (!pooledConnection.getAutoCommit()) {
 					pooledConnection.rollback();
 				}
-			}
-			catch(SQLException eE) {
+			} catch (SQLException eE) {
 				JdbpException.throwException(eE);
 			}
 			JdbpException.throwException(e);
-		}
-		finally {
+		} finally {
 			try {
-				if(preparedQueryStatement != null) {
+				if (preparedQueryStatement != null) {
 					preparedQueryStatement.close();
 				}
-				if(resultSet != null) {
+				if (resultSet != null) {
 					resultSet.close();
 				}
 				pooledConnection.close();
-			}
-			catch(SQLException e) {
+			} catch (SQLException e) {
 				JdbpException.throwException(e);
 			}
 		}
@@ -216,7 +210,8 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 	 * @return
 	 * @throws JdbpException
 	 */
-	protected List<DBInfo> executeCallableStatement(String dataSourceName, JdbpCallableStatement procedureInfo, Class<? extends DBInfo> containerClass) throws JdbpException {
+	protected List<DBInfo> executeCallableStatement(String dataSourceName, JdbpCallableStatement procedureInfo,
+			Class<? extends DBInfo> containerClass) throws JdbpException {
 		List<DBInfo> dbInfos = null;
 
 		ResultSet resultSet = null;
@@ -226,30 +221,26 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 			callableStatement = pooledConnection.prepareCall(procedureInfo.getRawCallableStatement());
 			resultSet = executeCallableStatement(callableStatement);
 			dbInfos = ResultSetTransposer.transposeResultSet(resultSet, containerClass);
-			if(!pooledConnection.getAutoCommit()) {
+			if (!pooledConnection.getAutoCommit()) {
 				pooledConnection.commit();
 			}
-		}
-		catch(SQLException e) {
+		} catch (SQLException e) {
 			try {
 				pooledConnection.rollback();
-			}
-			catch(SQLException eE) {
+			} catch (SQLException eE) {
 				JdbpException.throwException(eE);
 			}
 			JdbpException.throwException(e);
-		}
-		finally {
+		} finally {
 			try {
-				if(callableStatement != null) {
+				if (callableStatement != null) {
 					callableStatement.close();
 				}
-				if(resultSet != null) {
+				if (resultSet != null) {
 					resultSet.close();
 				}
 				pooledConnection.close();
-			}
-			catch(SQLException e) {
+			} catch (SQLException e) {
 				JdbpException.throwException(e);
 			}
 		}
@@ -266,21 +257,19 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 		ResultSet resultSet = null;
 		try {
 			boolean hasRecordsAvailable = callableStatement.execute();
-			while(hasRecordsAvailable || callableStatement.getUpdateCount() != -1) {
-				if(hasRecordsAvailable) {
+			while (hasRecordsAvailable || callableStatement.getUpdateCount() != -1) {
+				if (hasRecordsAvailable) {
 					resultSet = callableStatement.getResultSet();
 					break;
-				}
-				else {
+				} else {
 					int queryResult = callableStatement.getUpdateCount();
-					if(queryResult == -1) {
+					if (queryResult == -1) {
 						break;
 					}
 				}
 				hasRecordsAvailable = callableStatement.getMoreResults();
 			}
-		}
-		catch(SQLException e) {
+		} catch (SQLException e) {
 			JdbpException.throwException(e);
 		}
 		return resultSet;
@@ -288,7 +277,8 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 
 	/**
 	 * @param statementName
-	 * @return statementInfo for processing callable statement TODO Continue improving on this method
+	 * @return statementInfo for processing callable statement TODO Continue
+	 *         improving on this method
 	 */
 	protected JdbpCallableStatement prepareStatementInfo(String statementName) {
 		JdbpCallableStatement statementInfo = new JdbpCallableStatement();
@@ -297,64 +287,100 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 
 	}
 
-	protected List<DBInfo> executeNoSqlGet(String destinationTableName, Class<? extends DBInfo> containerClass) throws JdbpException {
+	protected List<DBInfo> executeNoSqlGet(String destinationTableName, Class<? extends DBInfo> containerClass)
+			throws JdbpException {
 		List<DBInfo> noSqlDBInfos = new ArrayList<>();
-		if(SqlUtil.isMongoDriver(getDriverName())) {
+		if (SqlUtil.isMongoDriver(getDriverName())) {
 			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
-			if(noSqlDataSource != null) {
+			if (noSqlDataSource != null) {
 				MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
 				MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
-				noSqlDBInfos = DBInfoTransposer.executeUnconditionalFindAndReturnDBInfos(mongoCollection, containerClass);
+				noSqlDBInfos = DBInfoTransposer.executeUnconditionalFindAndReturnDBInfos(mongoCollection,
+						containerClass);
 			}
 		}
 		return noSqlDBInfos;
 	}
 
+	protected boolean executeNoSqlUpdatePushAttributes(String destinationTableName, Map<String, Object> queryOperations, Map<String, Object> pushOperations)
+			throws JdbpException {
+		boolean isSuccess = false;
+		CompletableFuture<Boolean> result = new CompletableFuture<>();
+		if (SqlUtil.isMongoDriver(getDriverName())) {
+			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
+			if (noSqlDataSource != null) {
+				MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
+				MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
+				Document push = new Document(pushOperations);
+				Document query = new Document(queryOperations);
+				mongoCollection.updateOne(query, push, new UpdateOptions().upsert(true),
+						new SingleResultCallback<UpdateResult>() {
+
+							@Override
+							public void onResult(UpdateResult updateResult, Throwable error) {
+								if (error == null && updateResult.wasAcknowledged()) {
+									result.complete(true);
+								} else {
+									result.complete(false);
+								}
+							}
+
+						});
+
+			}
+		}
+		try {
+			isSuccess = result.get();
+		} catch (InterruptedException | ExecutionException e) {
+			JdbpLogger.logError(JdbpLoggerConstants.NOSQL, "MongoDB Callback Failed", e);
+		}
+		return isSuccess;
+	}
+
 	protected boolean executeNoSqlUpdateOne(String destinationTableName, DBInfo dbInfo) throws JdbpException {
 		boolean isSuccess = false;
 		CompletableFuture<Boolean> result = new CompletableFuture<>();
-		if(SqlUtil.isMongoDriver(getDriverName())) {
+		if (SqlUtil.isMongoDriver(getDriverName())) {
 			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
-			if(noSqlDataSource != null) {
+			if (noSqlDataSource != null) {
 				MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
 				MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
 				Document dbInfoAsDocument = null;
 				try {
 					dbInfoAsDocument = DBInfoTransposer.convertToDocumentFromDBInfo(dbInfo);
-				}
-				catch(JdbpException e) {
+				} catch (JdbpException e) {
 					isSuccess = false;
 					JdbpLogger.logInfo(JdbpLoggerConstants.NOSQL, e);
 				}
 				Map<String, Object> noSqlUpsertConditions = JdbpTypeUtil.findNoSqlCollectionUpsertConditions(dbInfo);
 				Document filter = null;
-				
-				if(!noSqlUpsertConditions.isEmpty()) {
-					filter = new Document(noSqlUpsertConditions);
-					mongoCollection.replaceOne(filter, dbInfoAsDocument, new UpdateOptions().upsert(true), new SingleResultCallback<UpdateResult>() {
 
-						@Override
-						public void onResult(UpdateResult updateResult, Throwable error) {
-							if (error == null && updateResult.wasAcknowledged()) {
-								result.complete(true);
-							}else {
-								result.complete(false);
-							}
-						}
-						
-					});
-				}
-				else {
+				if (!noSqlUpsertConditions.isEmpty()) {
+					filter = new Document(noSqlUpsertConditions);
+					mongoCollection.replaceOne(filter, dbInfoAsDocument, new UpdateOptions().upsert(true),
+							new SingleResultCallback<UpdateResult>() {
+
+								@Override
+								public void onResult(UpdateResult updateResult, Throwable error) {
+									if (error == null && updateResult.wasAcknowledged()) {
+										result.complete(true);
+									} else {
+										result.complete(false);
+									}
+								}
+
+							});
+				} else {
 					mongoCollection.insertOne(dbInfoAsDocument, new SingleResultCallback<Void>() {
 						@Override
 						public void onResult(Void voidElement, Throwable error) {
 							if (error == null) {
 								result.complete(true);
-							}else {
+							} else {
 								result.complete(false);
 							}
 						}
-						
+
 					});
 				}
 			}
@@ -369,13 +395,12 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 
 	protected boolean executeNoSqlUpdateMany(String destinationTableName, List<DBInfo> dbInfos) {
 		boolean isSuccess = true;
-		if(SqlUtil.isMongoDriver(getDriverName())) {
-			if(getNoSqlConnection().isConnectionAvailable()) {
-				for(DBInfo dbInfo: dbInfos) {
+		if (SqlUtil.isMongoDriver(getDriverName())) {
+			if (getNoSqlConnection().isConnectionAvailable()) {
+				for (DBInfo dbInfo : dbInfos) {
 					try {
 						executeNoSqlUpdateOne(destinationTableName, dbInfo);
-					}
-					catch(JdbpException e) {
+					} catch (JdbpException e) {
 						isSuccess = false;
 						JdbpLogger.logInfo(JdbpLoggerConstants.NOSQL, e);
 					}
@@ -385,24 +410,27 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 		return isSuccess;
 	}
 
-	protected List<DBInfo> executeNoSqlFindTopN(String destinationTableName, Class<? extends DBInfo> containerClass, int topN, Map<String, Object> equalityFiltersForFind) throws JdbpException {
+	protected List<DBInfo> executeNoSqlFindTopN(String destinationTableName, Class<? extends DBInfo> containerClass,
+			int topN, Map<String, Object> equalityFiltersForFind) throws JdbpException {
 		List<DBInfo> dbInfos = new ArrayList<>(topN);
-		if(SqlUtil.isMongoDriver(getDriverName())) {
+		if (SqlUtil.isMongoDriver(getDriverName())) {
 			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
-			if(noSqlDataSource != null) {
+			if (noSqlDataSource != null) {
 				MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
 				MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
-				dbInfos = DBInfoTransposer.executeConditionalFindAndReturnsDBInfos(mongoCollection, containerClass, new Document(equalityFiltersForFind));
+				dbInfos = DBInfoTransposer.executeConditionalFindAndReturnsDBInfos(mongoCollection, containerClass,
+						new Document(equalityFiltersForFind));
 			}
 		}
 		return dbInfos.isEmpty() ? dbInfos : dbInfos.subList(0, topN);
 	}
-	
-	protected List<DBInfo> executeNoSqlFindTopN(String destinationTableName, Class<? extends DBInfo> containerClass, int topN) throws JdbpException {
+
+	protected List<DBInfo> executeNoSqlFindTopN(String destinationTableName, Class<? extends DBInfo> containerClass,
+			int topN) throws JdbpException {
 		List<DBInfo> dbInfos = new ArrayList<>(topN);
-		if(SqlUtil.isMongoDriver(getDriverName())) {
+		if (SqlUtil.isMongoDriver(getDriverName())) {
 			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
-			if(noSqlDataSource != null) {
+			if (noSqlDataSource != null) {
 				MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
 				MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
 				dbInfos = DBInfoTransposer.executeUnconditionalFindAndReturnDBInfos(mongoCollection, containerClass);
@@ -410,15 +438,17 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 		}
 		return dbInfos.isEmpty() ? dbInfos : dbInfos.subList(0, topN);
 	}
-	
-	protected List<DBInfo> executeNoSqlFindAll(String destinationTableName, Class<? extends DBInfo> containerClass, Map<String, Object> equalityFiltersForFind) throws JdbpException {
+
+	protected List<DBInfo> executeNoSqlFindAll(String destinationTableName, Class<? extends DBInfo> containerClass,
+			Map<String, Object> equalityFiltersForFind) throws JdbpException {
 		List<DBInfo> dbInfos = new ArrayList<>();
-		if(SqlUtil.isMongoDriver(getDriverName())) {
+		if (SqlUtil.isMongoDriver(getDriverName())) {
 			NoSqlDataSource noSqlDataSource = getNoSqlConnection();
-			if(noSqlDataSource != null) {
+			if (noSqlDataSource != null) {
 				MongoDatabase mongoDatabase = noSqlDataSource.getMongoDatabase();
 				MongoCollection<Document> mongoCollection = mongoDatabase.getCollection(destinationTableName);
-				dbInfos = DBInfoTransposer.executeConditionalFindAndReturnsDBInfos(mongoCollection, containerClass, new Document(equalityFiltersForFind));
+				dbInfos = DBInfoTransposer.executeConditionalFindAndReturnsDBInfos(mongoCollection, containerClass,
+						new Document(equalityFiltersForFind));
 			}
 		}
 		return dbInfos;
