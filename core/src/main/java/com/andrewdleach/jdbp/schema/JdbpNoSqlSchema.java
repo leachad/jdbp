@@ -18,7 +18,7 @@ public class JdbpNoSqlSchema extends AbstractSchema {
 		return (List<T>)executeNoSqlGet(destinationTableName, containerClass);
 	}
 
-	public boolean upsertMany(String destinationTableName, List<DBInfo> dbInfoCollection, Class<? extends DBInfo> containerClass) throws JdbpException {
+	public boolean upsertMany(String destinationTableName, List<DBInfo> dbInfoCollection) throws JdbpException {
 		return executeNoSqlUpdateMany(destinationTableName, dbInfoCollection);
 	}
 

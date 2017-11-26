@@ -350,7 +350,7 @@ public abstract class AbstractSchema extends JdbpSchemaConnectionManager {
 					dbInfoAsDocument = DBInfoTransposer.convertToDocumentFromDBInfo(dbInfo);
 				} catch (JdbpException e) {
 					isSuccess = false;
-					JdbpLogger.logInfo(JdbpLoggerConstants.NOSQL, e);
+					JdbpLogger.logError(JdbpLoggerConstants.NOSQL, "Couldn't convert dbInfo to Document for " + destinationTableName, e);
 				}
 				Map<String, Object> noSqlUpsertConditions = JdbpTypeUtil.findNoSqlCollectionUpsertConditions(dbInfo);
 				Document filter = null;
