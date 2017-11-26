@@ -85,7 +85,7 @@ public class NoSqlDataSource {
 
 			@Override
 			public void serverHearbeatStarted(ServerHeartbeatStartedEvent event) {
-				JdbpLogger.logInfo(JdbpLoggerConstants.NOSQL, "Server Heartbeat Started for connectionId: ", event.getConnectionId().toString(), new Timestamp(System.currentTimeMillis()).toString());
+				// no operation necessary
 			}
 
 		};
